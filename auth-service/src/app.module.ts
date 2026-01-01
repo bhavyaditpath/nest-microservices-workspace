@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -11,8 +12,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       password: 'ips12345',
       database: 'microservices_db',
       autoLoadEntities: true,
-      synchronize: false, // ⚠️ DEV ONLY
+      synchronize: false,
     }),
+    AuthModule,
   ],
 })
 export class AppModule {}
