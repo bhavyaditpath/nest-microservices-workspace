@@ -1,5 +1,6 @@
 import { UserRole } from 'src/common/enums/role.enum';
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { IsEmail } from 'class-validator';
 
 @Entity('users')
 export class UserAuth {
@@ -7,6 +8,7 @@ export class UserAuth {
   id: number;
 
   @Column()
+  @IsEmail()
   username: string;
 
   @Column({ nullable: true })

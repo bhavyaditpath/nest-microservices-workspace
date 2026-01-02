@@ -1,12 +1,14 @@
 import { Column, Entity, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntityClass } from "src/common/base.entity";
 import { UserRole } from "src/common/enums/role.enum";
+import { IsEmail } from "class-validator";
 
 @Entity("users")
 @Index(['username', 'branchId'], { unique: true })
 export class User extends BaseEntityClass {
 
   @Column()
+  @IsEmail()
   username: string;
 
   @Column({ nullable: true })

@@ -2,7 +2,7 @@ import { IsString, IsEmail, IsOptional, IsEnum, IsNumber, IsBoolean } from 'clas
 import { UserRole } from '../../common/enums/role.enum';
 
 export class CreateUserDto {
-  @IsString()
+  @IsEmail()
   username: string;
 
   @IsString()
