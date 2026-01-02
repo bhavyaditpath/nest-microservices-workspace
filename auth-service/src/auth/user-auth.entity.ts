@@ -24,6 +24,19 @@ export class UserAuth {
   @Column({ default: false })
   isEmailVerified: boolean;
 
-  @Column({ nullable: true })
+  // Google OAuth fields
+  @Column({ unique: true, nullable: true })
+  email: string;
+
+  @Column({ unique: true, nullable: true })
   googleId: string;
+
+  @Column({ nullable: true })
+  firstName: string;
+
+  @Column({ nullable: true })
+  lastName: string;
+
+  @Column({ nullable: true })
+  profilePicture: string;
 }
