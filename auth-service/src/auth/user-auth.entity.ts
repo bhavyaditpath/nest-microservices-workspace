@@ -1,12 +1,11 @@
 import { UserRole } from 'src/common/enums/role.enum';
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { IsEmail } from 'class-validator';
+import { BaseEntityClass } from 'src/common/base.entity';
 
 @Entity('users')
-export class UserAuth extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class UserAuth extends BaseEntityClass {
+  
   @Column()
   @IsEmail()
   username: string;
