@@ -11,7 +11,7 @@ import {
 import { BranchService } from './branch.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
-import { ApiResponseUtil } from 'shared/src/common/api-response.util';
+import { ApiResponseUtil } from 'shared';
 
 @Controller('branches')
 export class BranchController {

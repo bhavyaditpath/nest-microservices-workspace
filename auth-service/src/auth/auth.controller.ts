@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserRole } from 'src/common/enums/role.enum';
-import { ApiResponseUtil } from 'shared/src/common/api-response.util';
+import { ApiResponseUtil } from 'shared';
 
 @Controller('auth')
 export class AuthController {
