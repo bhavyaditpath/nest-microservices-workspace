@@ -12,49 +12,56 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ApiResponseUtil } from 'shared/src/common/api-response.util';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    const data = await this.userService.create(createUserDto);
+    return ApiResponseUtil.success(data, 'User created successfully');
   }
 
   @Get()
-  findAll(@Query('branchId') branchId?: string) {
-    if (branchId) {
-      return this.userService.findByBranch(parseInt(branchId));
-    }
-    return this.userService.findAll();
+  async findAll(@Query('branchId') branchId?: string) {
+    const data = branchId
+      ? await this.userService.findByBranch(parseInt(branchId))
+      : await this.userService.findAll();
+    return ApiResponseUtil.success(data, 'Users retrieved successfully');
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const data = await this.userService.findOne(id);
+    return ApiResponseUtil.success(data, 'User retrieved successfully');
   }
 
   @Get('username/:username')
-  findByUsername(@Param('username') username: string) {
-    return this.userService.findByUsername(username);
+  async findByUsername(@Param('username') username: string) {
+    const data = await this.userService.findByUsername(username);
+    return ApiResponseUtil.success(data, 'User retrieved successfully');
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.userService.update(id, updateUserDto);
+    const data = await this.userService.update(id, updateUserDto);
+    return ApiResponseUtil.success(data, 'User updated successfully');
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.userService.remove(id);
+    return ApiResponseUtil.success(null, 'User deleted successfully');
   }
 
   @Patch(':id/restore')
-  restore(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.restore(id);
+  async restore(@Param('id', ParseIntPipe) id: number) {
+    const data = await this.userService.restore(id);
+    return ApiResponseUtil.success(data, 'User restored successfully');
   }
 }

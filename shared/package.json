@@ -1,0 +1,18 @@
+{
+  "name": "shared",
+  "version": "0.0.1",
+  "description": "Shared utilities for microservices",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "prepublish": "npm run build"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "@types/express": "^5.0.0"
+  }
+}
