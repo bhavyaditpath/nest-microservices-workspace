@@ -1,5 +1,5 @@
 import { UserRole } from 'src/common/enums/role.enum';
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { IsEmail } from 'class-validator';
 import { BaseEntityClass } from 'src/common/base.entity';
 

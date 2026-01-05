@@ -11,41 +11,41 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
-  @Post("register")
+  @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
-  @Post("login")
+  @Post('login')
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
-  @Post("forgot-password")
+  @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
 
-  @Post("validate-reset-token")
+  @Post('validate-reset-token')
   async validateResetToken(@Body() dto: ValidateResetTokenDto) {
     return this.authService.validateResetToken(dto.token);
   }
 
-  @Post("reset-password")
+  @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
 
-  @Post("refresh")
+  @Post('refresh')
   async refreshToken(@Body() body: { refresh_token: string }) {
     return this.authService.refreshToken(body.refresh_token);
   }
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {
+  async googleAuth() {
     // This route initiates the Google OAuth flow
   }
 

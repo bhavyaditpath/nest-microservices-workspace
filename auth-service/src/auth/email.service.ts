@@ -1,18 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-  constructor(private configService: ConfigService) {}
+  private transporter: nodemailer.Transporter;
+
+  constructor(private configService: ConfigService) {
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get<string>('EMAIL_HOST'),
+      port: this.configService.get<number>('EMAIL_PORT'),
+      secure: this.configService.get<boolean>('EMAIL_SECURE'),
+      auth: {
+        user: this.configService.get<string>('EMAIL_USER'),
+        pass: this.configService.get<string>('EMAIL_PASS'),
+      },
+    });
+  }
 
   async sendResetPasswordEmail(to: string, token: string): Promise<void> {
-    // TODO: Implement email sending logic
-    console.log(`Sending reset password email to ${to} with token ${token}`);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     const resetUrl = `${frontendUrl}/auth/reset-password?token=${token}`;
 
     const mailOptions = {
-      from: this.configService.get<string>('EMAIL_FROM') || this.configService.get<string>('EMAIL_USER'),
+      from:
+        this.configService.get<string>('EMAIL_FROM') ||
+        this.configService.get<string>('EMAIL_USER'),
       to,
       subject: 'Reset Your Password',
       html: `
@@ -24,6 +37,6 @@ export class EmailService {
       `,
     };
 
-    // await this.transporter.sendMail(mailOptions); --- uncomment this for Email
+    await this.transporter.sendMail(mailOptions);
   }
 }

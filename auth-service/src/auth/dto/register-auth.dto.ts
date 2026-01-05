@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 import { UserRole } from 'src/common/enums/role.enum';
 
 export class RegisterDto {
@@ -12,4 +18,8 @@ export class RegisterDto {
 
   @IsEnum(UserRole)
   role: UserRole;
+
+  @IsOptional()
+  @IsNumber()
+  branchId?: number;
 }

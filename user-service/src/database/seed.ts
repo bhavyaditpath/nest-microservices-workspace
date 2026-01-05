@@ -24,6 +24,13 @@ async function seedUsers() {
       isEmailVerified: true,
     },
     {
+      username: 'admin12@yopmail.com',
+      password: await bcrypt.hash('admin123', 10),
+      role: UserRole.ADMIN,
+      branchId: 1,
+      isEmailVerified: true,
+    },
+    {
       username: 'branch1@example.com',
       password: await bcrypt.hash('branch123', 10),
       role: UserRole.BRANCH,
