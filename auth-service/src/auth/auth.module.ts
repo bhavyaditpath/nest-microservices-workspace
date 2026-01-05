@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { UserAuth } from './user-auth.entity';
 import { RefreshToken } from './refresh-token.entity';
 import { JwtStrategy } from 'src/common/jwt.strategy';
+import { EmailService } from './email.service';
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { JwtStrategy } from 'src/common/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, EmailService],
 })
 export class AuthModule {}

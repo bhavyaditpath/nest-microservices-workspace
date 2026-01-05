@@ -1,139 +1,248 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Injectable } from '@nestjs/common';
+import { LoginDto } from './dto/login-auth.dto';
+import { RegisterDto } from './dto/register-auth.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { UserAuth } from './user-auth.entity';
-import { RefreshToken } from './refresh-token.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
+import { ApiResponse, ApiResponseUtil, HashUtil, LoginResponse } from 'shared';
+import { EmailService } from './email.service';
 import { UserRole } from 'src/common/enums/role.enum';
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserAuth)
     private userRepo: Repository<UserAuth>,
-    @InjectRepository(RefreshToken)
-    private refreshTokenRepo: Repository<RefreshToken>,
     private jwtService: JwtService,
-  ) {}
+    private emailService: EmailService,
+    private configService: ConfigService
+  ) { }
 
-  async login(username: string, password: string) {
-    const user = await this.userRepo.findOne({
-      where: { username },
+  async register(dto: RegisterDto): Promise<ApiResponse> {
+    const exists = await this.userRepo.findOne({
+      where: { username: dto.username }
     });
 
-    if (!user || !user.password) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (exists) {
+      return ApiResponseUtil.error("Username already exists");
     }
 
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid credentials');
+    const hashedPassword = await HashUtil.hash(dto.password);
+
+    const newUser = this.userRepo.create({
+      username: dto.username,
+      password: hashedPassword,
+      role: dto.role
+    });
+
+    const savedUser = await this.userRepo.save(newUser);
+    return ApiResponseUtil.success(savedUser, "User registered successfully");
+  }
+
+  async login(dto: LoginDto): Promise<ApiResponse> {
+    const user = await this.userRepo.findOne({
+      where: { username: dto.username, isRemoved: false }
+    });
+
+    if (!user) return ApiResponseUtil.error("Invalid credentials");
+
+    const passwordMatch = await HashUtil.compare(dto.password, user.password);
+
+    if (!passwordMatch) return ApiResponseUtil.error("Invalid credentials");
+
+    const tokens = this.generateTokens(user);
+
+    return ApiResponseUtil.success(tokens, "Login successful");
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<ApiResponse> {
+    const user = await this.userRepo.findOne({
+      where: { username: dto.username }
+    });
+
+    if (!user) {
+      return ApiResponseUtil.error("User not found");
     }
 
     const payload = {
-      userId: user.id,
-      role: user.role,
-      branchId: user.branchId,
+      sub: user.id,
+      username: user.username
     };
 
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const token = this.jwtService.sign(payload, { expiresIn: '15m' });
 
-    // Store refresh token
-    const refreshTokenEntity = this.refreshTokenRepo.create({
-      token: refreshToken,
-      userId: user.id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
-    await this.refreshTokenRepo.save(refreshTokenEntity);
+    await this.emailService.sendResetPasswordEmail(user.username, token);
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return ApiResponseUtil.success(null, "Reset email sent successfully");
   }
 
-  async register(username: string, password: string, role: UserRole, branchId?: number) {
-    const existingUser = await this.userRepo.findOne({
-      where: { username },
-    });
-
-    if (existingUser) {
-      throw new ConflictException('User already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = this.userRepo.create({
-      username,
-      password: hashedPassword,
-      role,
-      branchId,
-    });
-
-    await this.userRepo.save(user);
-
-    return { message: 'User registered successfully' };
-  }
-
-  async validateToken(token: string) {
+  async validateResetToken(token: string): Promise<ApiResponse> {
     try {
       const payload = this.jwtService.verify(token);
-      return { valid: true, payload };
+
+      const user = await this.userRepo.findOne({
+        where: { id: payload.sub }
+      });
+
+      if (!user) {
+        return ApiResponseUtil.error("Invalid token");
+      }
+
+      return ApiResponseUtil.success({ valid: true }, "Token is valid");
     } catch (error) {
-      return { valid: false, error: error.message };
+      return ApiResponseUtil.error("Invalid or expired token");
     }
   }
 
-  async refreshToken(refreshToken: string) {
-    const tokenEntity = await this.refreshTokenRepo.findOne({
-      where: { token: refreshToken, isRevoked: false },
-      relations: ['user'],
-    });
+  async resetPassword(dto: ResetPasswordDto): Promise<ApiResponse> {
+    try {
+      const payload = this.jwtService.verify(dto.token);
 
-    if (!tokenEntity || tokenEntity.expiresAt < new Date()) {
-      throw new UnauthorizedException('Invalid refresh token');
+      const user = await this.userRepo.findOne({
+        where: { id: payload.sub }
+      });
+
+      if (!user) {
+        return ApiResponseUtil.error("Invalid token");
+      }
+
+      const hashedPassword = await HashUtil.hash(dto.newPassword);
+
+      await this.userRepo.update(user.id, { password: hashedPassword });
+
+      return ApiResponseUtil.success(null, "Password reset successfully");
+    } catch (error) {
+      return ApiResponseUtil.error("Invalid or expired token");
+    }
+  }
+
+  async googleLogin(req: any, res: any): Promise<void> {
+    if (!req.user) {
+      res.redirect(`${this.configService.get<string>('FRONTEND_URL')}/login?error=google_auth_failed`);
+      return;
     }
 
-    const user = tokenEntity.user;
+    const { email, firstName, lastName, picture, googleId } = req.user;
+
+    // Find or create user
+    // Find user by googleId
+    let user = await this.userRepo.findOne({
+      where: { googleId }
+    });
+
+    if (!user) {
+      // Check both email and username (because username may be email)
+      const existingUser = await this.userRepo.findOne({
+        where: [
+          { email },
+          { username: email }
+        ]
+      });
+
+      if (existingUser) {
+        // Link Google to existing user
+        existingUser.googleId = googleId;
+        existingUser.firstName = firstName;
+        existingUser.lastName = lastName;
+        existingUser.profilePicture = picture;
+        existingUser.isEmailVerified = true;
+
+        user = await this.userRepo.save(existingUser);
+      } else {
+        // Create new Google user
+        const defaultBranchId = this.configService.get<number>('DEFAULT_BRANCH_ID') || 1;
+
+        user = this.userRepo.create({
+          username: email,
+          email,
+          googleId,
+          firstName,
+          lastName,
+          profilePicture: picture,
+          isEmailVerified: true,
+          role: UserRole.BRANCH,
+          branchId: defaultBranchId
+        });
+
+        user = await this.userRepo.save(user);
+      }
+    }
+
+    const tokens = this.generateTokens(user);
+
+    // Redirect to frontend with tokens or set in cookies
+    const redirectUrl = `${this.configService.get<string>('FRONTEND_URL')}/auth/google/callback?access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}`;
+    res.redirect(redirectUrl);
+  }
+
+  private generateTokens(user: UserAuth): LoginResponse {
     const payload = {
-      userId: user.id,
+      sub: user.id,
+      username: user.username,
       role: user.role,
-      branchId: user.branchId,
+      branchId: user.branchId
     };
 
-    const newAccessToken = this.jwtService.sign(payload);
-    const newRefreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '45m' });
 
-    // Revoke old refresh token
-    tokenEntity.isRevoked = true;
-    await this.refreshTokenRepo.save(tokenEntity);
-
-    // Store new refresh token
-    const newTokenEntity = this.refreshTokenRepo.create({
-      token: newRefreshToken,
-      userId: user.id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-    await this.refreshTokenRepo.save(newTokenEntity);
+    const refreshToken = this.jwtService.sign({ ...payload, type: 'refresh' }, { expiresIn: '7d' }); // 7 days expiry
 
     return {
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
+      access_token: accessToken,
+      refresh_token: refreshToken
     };
   }
 
-  async logout(refreshToken: string) {
-    const tokenEntity = await this.refreshTokenRepo.findOne({
-      where: { token: refreshToken },
-    });
+  async refreshToken(refreshToken: string): Promise<ApiResponse> {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      if (payload.type !== 'refresh') {
+        return ApiResponseUtil.error("Invalid refresh token");
+      }
 
-    if (tokenEntity) {
-      tokenEntity.isRevoked = true;
-      await this.refreshTokenRepo.save(tokenEntity);
+      const user = await this.userRepo.findOne({
+        where: { id: payload.sub }
+      });
+
+      if (!user) {
+        return ApiResponseUtil.error("Invalid refresh token");
+      }
+
+      const tokens = this.generateTokens(user);
+      return ApiResponseUtil.success(tokens, "Token refreshed");
+    } catch (error) {
+      return ApiResponseUtil.error("Invalid or expired refresh token");
+    }
+  }
+
+  async getProfile(userId: number): Promise<ApiResponse> {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['id', 'username', 'email', 'firstName', 'lastName', 'profilePicture', 'role', 'branchId']
+    });
+    console.log(userId)
+
+    if (!user) {
+      return ApiResponseUtil.error("User not found");
     }
 
-    return { message: 'Logged out successfully' };
+    // Transform response to include branch name
+    const profile = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profilePicture: user.profilePicture,
+      role: user.role,
+      branch: null,
+      branchId: user.branchId
+    };
+
+    return ApiResponseUtil.success(profile, "Profile retrieved successfully");
   }
 }

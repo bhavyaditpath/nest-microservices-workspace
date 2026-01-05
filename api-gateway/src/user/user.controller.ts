@@ -11,7 +11,7 @@ export class UserController {
   @Post()
   async create(@Body() createUserDto: any) {
     const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3002/users', createUserDto)
+      this.httpService.post('http://localhost:3004/users', createUserDto)
     );
     return response.data;
   }
@@ -20,7 +20,7 @@ export class UserController {
   @Get()
   async findAll(@Query('branchId') branchId?: string) {
     const response = await firstValueFrom(
-      this.httpService.get('http://localhost:3002/users', { params: { branchId } })
+      this.httpService.get('http://localhost:3004/users', { params: { branchId } })
     );
     return response.data;
   }
@@ -29,7 +29,7 @@ export class UserController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
-      this.httpService.get(`http://localhost:3002/users/${id}`)
+      this.httpService.get(`http://localhost:3004/users/${id}`)
     );
     return response.data;
   }
@@ -38,7 +38,7 @@ export class UserController {
   @Get('username/:username')
   async findByUsername(@Param('username') username: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`http://localhost:3002/users/username/${username}`)
+      this.httpService.get(`http://localhost:3004/users/username/${username}`)
     );
     return response.data;
   }
@@ -47,7 +47,7 @@ export class UserController {
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: any) {
     const response = await firstValueFrom(
-      this.httpService.patch(`http://localhost:3002/users/${id}`, updateUserDto)
+      this.httpService.patch(`http://localhost:3004/users/${id}`, updateUserDto)
     );
     return response.data;
   }
@@ -56,7 +56,7 @@ export class UserController {
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
-      this.httpService.delete(`http://localhost:3002/users/${id}`)
+      this.httpService.delete(`http://localhost:3004/users/${id}`)
     );
     return response.data;
   }
@@ -65,7 +65,7 @@ export class UserController {
   @Patch(':id/restore')
   async restore(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
-      this.httpService.patch(`http://localhost:3002/users/${id}/restore`)
+      this.httpService.patch(`http://localhost:3004/users/${id}/restore`)
     );
     return response.data;
   }
