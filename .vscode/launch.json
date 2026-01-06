@@ -4,8 +4,35 @@
     {
       "type": "node",
       "request": "attach",
-      "name": "Debug NestJS",
+      "name": "Debug User Service",
       "port": 9229,
+      "restart": true,
+      "protocol": "inspector",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Debug Auth Service",
+      "port": 9230,
+      "restart": true,
+      "protocol": "inspector",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Debug Branch Service",
+      "port": 9231,
+      "restart": true,
+      "protocol": "inspector",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Debug Purchase Service",
+      "port": 9232,
       "restart": true,
       "protocol": "inspector",
       "skipFiles": ["<node_internals>/**"]
