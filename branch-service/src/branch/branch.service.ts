@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
@@ -22,7 +22,7 @@ export class BranchService {
     // Check if branch name already exists
     const existingBranch = await this.branchRepository.findOne({ where: { name: createBranchDto.name, isRemoved: false } });
     if (existingBranch) {
-      throw new Error('Branch name already exists');
+      throw new HttpException('Branch name already exists', HttpStatus.BAD_REQUEST);
     }
 
     const branch = await this.branchRepository.save(this.branchRepository.create(createBranchDto));
@@ -36,7 +36,7 @@ export class BranchService {
     const queryBuilder = this.branchRepository.createQueryBuilder('branch');
 
     // Filter out deleted records
-    queryBuilder.andWhere('branch.isRemoved = :isRemoved', { isRemoved: false });
+    // queryBuilder.andWhere('branch.isRemoved = :isRemoved', { isRemoved: false });
 
     // Add search conditions if search term is provided
     if (search && search.trim()) {
@@ -88,7 +88,7 @@ export class BranchService {
     if (updateBranchDto.name) {
       const existingBranch = await this.branchRepository.findOne({ where: { name: updateBranchDto.name } });
       if (existingBranch && existingBranch.id !== id) {
-        throw new Error('Branch name already exists');
+        throw new HttpException('Branch name already exists', HttpStatus.BAD_REQUEST);
       }
     }
     // Check if trying to deactivate branch and users are assigned
@@ -96,7 +96,7 @@ export class BranchService {
       const userCount = await this.getUserCountByBranch(id);
 
       if (userCount > 0) {
-        throw new Error('Cannot deactivate branch: Users are still assigned to this branch');
+        throw new HttpException('Cannot deactivate branch: Users are still assigned to this branch', HttpStatus.BAD_REQUEST);
       }
     }
 
@@ -107,14 +107,14 @@ export class BranchService {
   async remove(id: number) {
     const branch = await this.findOne(id);
     if (!branch) {
-      throw new Error('Branch not found');
+      throw new HttpException('Branch not found', HttpStatus.NOT_FOUND);
     }
 
     // Check if any users are assigned to this branch
     const userCount = await this.getUserCountByBranch(id);
 
     if (userCount > 0) {
-      throw new Error('Cannot delete branch: Users are still assigned to this branch');
+      throw new HttpException('Cannot delete branch: Users are still assigned to this branch', HttpStatus.BAD_REQUEST);
     }
 
     await this.branchRepository.update(id, { isRemoved: true });
@@ -137,7 +137,7 @@ export class BranchService {
 
   private async getUserCountByBranch(branchId: number): Promise<number> {
     try {
-      const response = await this.httpService.get(`http://localhost:3002/users/count?branchId=${branchId}`).toPromise();
+      const response = await this.httpService.get(`http://localhost:3004/users/count?branchId=${branchId}`).toPromise();
       if (!response || !response.data) return 0;
       return response.data;
     } catch {

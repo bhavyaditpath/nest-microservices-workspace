@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Query, HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -10,10 +10,17 @@ export class BranchController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Body() createBranchDto: any) {
-    const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3003/branches', createBranchDto)
-    );
-    return response.data;
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post('http://localhost:3003/branches', createBranchDto)
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw new HttpException(error.response.data, error.response.status);
+      }
+      throw error;
+    }
   }
 
   @UseGuards(JwtAuthGuard)
@@ -60,10 +67,17 @@ export class BranchController {
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateBranchDto: any) {
-    const response = await firstValueFrom(
-      this.httpService.patch(`http://localhost:3003/branches/${id}`, updateBranchDto)
-    );
-    return response.data;
+    try {
+      const response = await firstValueFrom(
+        this.httpService.patch(`http://localhost:3003/branches/${id}`, updateBranchDto)
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw new HttpException(error.response.data, error.response.status);
+      }
+      throw error;
+    }
   }
 
   @UseGuards(JwtAuthGuard)

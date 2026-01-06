@@ -26,6 +26,15 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('count')
+  async count(@Query('branchId', ParseIntPipe) branchId: number) {
+    const response = await firstValueFrom(
+      this.httpService.get(`http://localhost:3004/users/count?branchId=${branchId}`)
+    );
+    return response.data;
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
