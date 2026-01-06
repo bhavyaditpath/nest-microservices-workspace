@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Query, HttpException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Query, HttpException, Request, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('purchase')
 export class PurchaseController {
   private readonly purchaseServiceUrl: string;
+  private readonly logger = new Logger(PurchaseController.name);
 
   constructor(private httpService: HttpService) {
     this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
@@ -14,13 +15,14 @@ export class PurchaseController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Body() createPurchaseDto: any, @Request() req) {
-    createPurchaseDto.userId = req.user.id;
+    createPurchaseDto.userId = req.user.userId;
     try {
       const response = await firstValueFrom(
         this.httpService.post(`${this.purchaseServiceUrl}/purchases`, createPurchaseDto)
       );
       return response.data;
     } catch (error) {
+      this.logger.error('Error creating purchase', error);
       if (error.response) {
         throw new HttpException(error.response.data, error.response.status);
       }
@@ -31,7 +33,7 @@ export class PurchaseController {
   @UseGuards(JwtAuthGuard)
   @Get()
   async findAll(@Request() req) {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const params = new URLSearchParams();
     if (userId) params.append('userId', userId.toString());
 
