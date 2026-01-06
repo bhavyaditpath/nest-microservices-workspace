@@ -6,4 +6,3 @@ export * from './enums/notification-type.enum';
 export * from './types/auth.types';
 export * from './utils/hash.util';
 export * from './dto/pagination-query.dto';
-export * from './generic-repository';

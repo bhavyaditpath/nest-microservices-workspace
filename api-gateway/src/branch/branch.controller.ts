@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Query } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('branches')
+@Controller('branch')
 export class BranchController {
-  constructor(private httpService: HttpService) {}
+  constructor(private httpService: HttpService) { }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -18,9 +18,23 @@ export class BranchController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll() {
+  async findAll(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ) {
+    const params = new URLSearchParams();
+    if (page) params.append('page', page);
+    if (pageSize) params.append('pageSize', pageSize);
+    if (search) params.append('search', search);
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+
+    const url = `http://localhost:3003/branches${params.toString() ? '?' + params.toString() : ''}`;
     const response = await firstValueFrom(
-      this.httpService.get('http://localhost:3003/branches')
+      this.httpService.get(url)
     );
     return response.data;
   }
@@ -57,15 +71,6 @@ export class BranchController {
   async remove(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
       this.httpService.delete(`http://localhost:3003/branches/${id}`)
-    );
-    return response.data;
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id/restore')
-  async restore(@Param('id', ParseIntPipe) id: number) {
-    const response = await firstValueFrom(
-      this.httpService.patch(`http://localhost:3003/branches/${id}/restore`)
     );
     return response.data;
   }

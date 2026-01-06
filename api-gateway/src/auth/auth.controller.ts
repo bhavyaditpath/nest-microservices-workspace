@@ -10,7 +10,7 @@ export class AuthController {
   @Post('register')
   async register(@Body() body: any) {
     const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3002/auth/register', body)
+      this.httpService.post('http://localhost:3001/auth/register', body)
     );
     return response.data;
   }
@@ -19,7 +19,7 @@ export class AuthController {
   async login(@Body() body: { username: string; password: string }) {
     // Forward the request to auth-service
     const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3002/auth/login', body)
+      this.httpService.post('http://localhost:3001/auth/login', body)
     );
     return response.data;
   }
@@ -27,7 +27,7 @@ export class AuthController {
   @Post('forgot-password')
   async forgotPassword(@Body() body: any) {
     const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3002/auth/forgot-password', body)
+      this.httpService.post('http://localhost:3001/auth/forgot-password', body)
     );
     return response.data;
   }
@@ -35,7 +35,7 @@ export class AuthController {
   @Post('validate-reset-token')
   async validateResetToken(@Body() body: any) {
     const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3002/auth/validate-reset-token', body)
+      this.httpService.post('http://localhost:3001/auth/validate-reset-token', body)
     );
     return response.data;
   }
@@ -43,7 +43,7 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() body: any) {
     const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3002/auth/reset-password', body)
+      this.httpService.post('http://localhost:3001/auth/reset-password', body)
     );
     return response.data;
   }
@@ -51,7 +51,7 @@ export class AuthController {
   @Post('refresh')
   async refresh(@Body() body: { refreshToken: string }) {
     const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3002/auth/refresh', { refresh_token: body.refreshToken })
+      this.httpService.post('http://localhost:3001/auth/refresh', { refresh_token: body.refreshToken })
     );
     return response.data;
   }
@@ -61,7 +61,7 @@ export class AuthController {
   async getProfile(@Req() req: any) {
     const userId = req.user.id;
     const response = await firstValueFrom(
-      this.httpService.get('http://localhost:3002/auth/me', {
+      this.httpService.get('http://localhost:3001/auth/me', {
         headers: { 'user-id': userId.toString() }
       })
     );

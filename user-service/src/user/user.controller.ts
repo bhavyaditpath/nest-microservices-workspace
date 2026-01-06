@@ -18,6 +18,11 @@ export class UserController {
     return this.userService.findAll(page, pageSize, search, sortBy, sortOrder);
   }
 
+  @Get('count')
+  async countUsersByBranch(@Query('branchId', ParseIntPipe) branchId: number) {
+    return this.userService.countUsersByBranch(branchId);
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findOne(id);

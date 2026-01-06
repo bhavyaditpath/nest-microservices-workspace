@@ -1,90 +1,147 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Branch } from './branch.entity';
+import { HttpService } from '@nestjs/axios';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
-
+import { NotificationType } from 'shared';
+import { Branch } from './branch.entity';
 @Injectable()
 export class BranchService {
+  private readonly branchRepository: Repository<Branch>;
+
   constructor(
     @InjectRepository(Branch)
-    private branchRepository: Repository<Branch>,
-  ) {}
+    repo: Repository<Branch>,
+    private readonly httpService: HttpService,
+  ) {
+    this.branchRepository = repo;
+  }
 
-  async create(createBranchDto: CreateBranchDto): Promise<Branch> {
-    // Check if name already exists
-    const existingBranch = await this.branchRepository.findOne({
-      where: { name: createBranchDto.name, isRemoved: false },
-    });
-
+  async create(createBranchDto: CreateBranchDto) {
+    // Check if branch name already exists
+    const existingBranch = await this.branchRepository.findOne({ where: { name: createBranchDto.name, isRemoved: false } });
     if (existingBranch) {
-      throw new ConflictException('Branch name already exists');
+      throw new Error('Branch name already exists');
     }
 
-    const branch = this.branchRepository.create(createBranchDto);
-    return await this.branchRepository.save(branch);
-  }
-
-  async findAll(): Promise<Branch[]> {
-    return await this.branchRepository.find({
-      where: { isRemoved: false },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async findOne(id: number): Promise<Branch> {
-    const branch = await this.branchRepository.findOne({
-      where: { id, isRemoved: false },
-    });
-
-    if (!branch) {
-      throw new NotFoundException(`Branch with ID ${id} not found`);
-    }
+    const branch = await this.branchRepository.save(this.branchRepository.create(createBranchDto));
+    // Create notification for new branch
+    await this.createBranchCreationNotification(branch);
 
     return branch;
   }
 
-  async findByName(name: string): Promise<Branch | null> {
-    return await this.branchRepository.findOne({
-      where: { name, isRemoved: false },
-    });
+  async findAll(page?: number, pageSize?: number, search?: string, sortBy?: string, sortOrder?: 'ASC' | 'DESC') {
+    const queryBuilder = this.branchRepository.createQueryBuilder('branch');
+
+    // Filter out deleted records
+    queryBuilder.andWhere('branch.isRemoved = :isRemoved', { isRemoved: false });
+
+    // Add search conditions if search term is provided
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim().toLowerCase()}%`;
+      queryBuilder.andWhere(
+        'LOWER(branch.name) LIKE :searchTerm',
+        { searchTerm }
+      );
+    }
+
+    // Add dynamic sorting
+    const validSortFields = ['name', 'address', 'phone', 'id', 'createdAt', 'updatedAt'];
+    const sortField = sortBy && validSortFields.includes(sortBy) ? sortBy : 'name';
+    const sortDirection = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+    queryBuilder.orderBy(`branch.${sortField}`, sortDirection);
+
+    if (page && pageSize) {
+      // Calculate pagination
+      const offset = (page - 1) * pageSize;
+      queryBuilder.skip(offset).take(pageSize);
+
+      // Execute query
+      const [items, total] = await queryBuilder.getManyAndCount();
+
+      return {
+        items,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      };
+    } else {
+      // Return all matching items without pagination
+      return await queryBuilder.getMany();
+    }
   }
 
-  async update(id: number, updateBranchDto: UpdateBranchDto): Promise<Branch> {
-    const branch = await this.findOne(id);
+  async findOne(id: number) {
+    return this.branchRepository.findOne({ where: { id, isRemoved: false } });
+  }
 
-    // Check name uniqueness if updating name
-    if (updateBranchDto.name && updateBranchDto.name !== branch.name) {
-      const existingBranch = await this.branchRepository.findOne({
-        where: { name: updateBranchDto.name, isRemoved: false },
-      });
+  async findByName(name: string): Promise<Branch | null> {
+    return this.branchRepository.findOne({ where: { name, isRemoved: false } });
+  }
 
-      if (existingBranch) {
-        throw new ConflictException('Branch name already exists');
+  async update(id: number, updateBranchDto: UpdateBranchDto) {
+    // Check if branch name already exists (excluding current branch)
+    if (updateBranchDto.name) {
+      const existingBranch = await this.branchRepository.findOne({ where: { name: updateBranchDto.name } });
+      if (existingBranch && existingBranch.id !== id) {
+        throw new Error('Branch name already exists');
+      }
+    }
+    // Check if trying to deactivate branch and users are assigned
+    if (updateBranchDto.isRemoved === true) {
+      const userCount = await this.getUserCountByBranch(id);
+
+      if (userCount > 0) {
+        throw new Error('Cannot deactivate branch: Users are still assigned to this branch');
       }
     }
 
-    Object.assign(branch, updateBranchDto);
-    return await this.branchRepository.save(branch);
+    await this.branchRepository.update(id, updateBranchDto);
+    return this.branchRepository.findOne({ where: { id } });
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number) {
     const branch = await this.findOne(id);
-    branch.isRemoved = true;
-    await this.branchRepository.save(branch);
-  }
-
-  async restore(id: number): Promise<Branch> {
-    const branch = await this.branchRepository.findOne({
-      where: { id, isRemoved: true },
-    });
-
     if (!branch) {
-      throw new NotFoundException(`Branch with ID ${id} not found in removed records`);
+      throw new Error('Branch not found');
     }
 
-    branch.isRemoved = false;
-    return await this.branchRepository.save(branch);
+    // Check if any users are assigned to this branch
+    const userCount = await this.getUserCountByBranch(id);
+
+    if (userCount > 0) {
+      throw new Error('Cannot delete branch: Users are still assigned to this branch');
+    }
+
+    await this.branchRepository.update(id, { isRemoved: true });
+    return branch;
+  }
+
+  private async createBranchCreationNotification(branch: Branch): Promise<void> {
+    try {
+      const title = 'New Branch Created';
+      const message = `A new branch "${branch.name}" has been created at ${branch.address}.`;
+
+      // // For now, implement notification logic locally (e.g., save to database or send email)
+      // console.log('Creating notification:', { title, message, type: NotificationType.BRANCH, branchId: branch.id });
+
+      // TODO: Implement actual notification creation logic (e.g., save to notification table, send email, etc.)
+    } catch (error) {
+      console.error('Failed to create branch creation notification:', error);
+    }
+  }
+
+  private async getUserCountByBranch(branchId: number): Promise<number> {
+    try {
+      const response = await this.httpService.get(`http://localhost:3002/users/count?branchId=${branchId}`).toPromise();
+      if (!response || !response.data) return 0;
+      return response.data;
+    } catch {
+      return 0;
+    }
   }
 }

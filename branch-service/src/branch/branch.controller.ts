@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { BranchService } from './branch.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
@@ -24,8 +25,20 @@ export class BranchController {
   }
 
   @Get()
-  async findAll() {
-    const data = await this.branchService.findAll();
+  async findAll(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ) {
+    const data = await this.branchService.findAll(
+      page ? parseInt(page) : undefined,
+      pageSize ? parseInt(pageSize) : undefined,
+      search,
+      sortBy,
+      sortOrder as 'ASC' | 'DESC' | undefined,
+    );
     return ApiResponseUtil.success(data, 'Branches retrieved successfully');
   }
 
@@ -54,11 +67,5 @@ export class BranchController {
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.branchService.remove(id);
     return ApiResponseUtil.success(null, 'Branch deleted successfully');
-  }
-
-  @Patch(':id/restore')
-  async restore(@Param('id', ParseIntPipe) id: number) {
-    const data = await this.branchService.restore(id);
-    return ApiResponseUtil.success(data, 'Branch restored successfully');
   }
 }
