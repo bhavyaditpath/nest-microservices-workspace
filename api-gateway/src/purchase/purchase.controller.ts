@@ -8,7 +8,7 @@ export class PurchaseController {
   private readonly purchaseServiceUrl: string;
 
   constructor(private httpService: HttpService) {
-    this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
+    this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3005';
   }
 
   @UseGuards(JwtAuthGuard)
