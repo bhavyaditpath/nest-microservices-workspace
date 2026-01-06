@@ -10,6 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 @Injectable()
 export class UserService {
   private readonly userRepository: Repository<User>;
+  private readonly apiGatewayUrl: string;
 
   constructor(
     @InjectRepository(User)
@@ -17,13 +18,14 @@ export class UserService {
     private readonly httpService: HttpService,
   ) {
     this.userRepository = repo;
+    this.apiGatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:3002';
   }
 
   async create(userDto: CreateUserDto): Promise<ApiResponse> {
     const { username, password, role, branchName } = userDto;
 
     // Find branch
-    const branchResponse = await this.httpService.get(`http://localhost:3003/branches/name/${branchName}`).toPromise();
+    const branchResponse = await this.httpService.get(`${this.apiGatewayUrl}/branch/internal/name/${branchName}`).toPromise();
     if (!branchResponse || !branchResponse.data || !branchResponse.data.success) {
       return ApiResponseUtil.error('Branch not found');
     }
@@ -156,7 +158,7 @@ export class UserService {
     let branchId = user.branchId;
 
     if (userDto.branchName) {
-      const branchResponse = await this.httpService.get(`http://localhost:3003/branches/name/${userDto.branchName}`).toPromise();
+      const branchResponse = await this.httpService.get(`${this.apiGatewayUrl}/branch/internal/name/${userDto.branchName}`).toPromise();
       if (!branchResponse || !branchResponse.data || !branchResponse.data.success) {
         return ApiResponseUtil.error('Branch not found');
       }
@@ -232,7 +234,7 @@ export class UserService {
 
   private async getBranchName(branchId: number): Promise<string | null> {
     try {
-      const response = await this.httpService.get(`http://localhost:3003/branches/${branchId}`).toPromise();
+      const response = await this.httpService.get(`${this.apiGatewayUrl}/branch/internal/${branchId}`).toPromise();
       if (!response || !response.data || !response.data.success) return null;
       return response.data.data?.name || null;
     } catch {

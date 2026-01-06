@@ -5,14 +5,18 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('branch')
 export class BranchController {
-  constructor(private httpService: HttpService) { }
+  private readonly branchServiceUrl: string;
+
+  constructor(private httpService: HttpService) {
+    this.branchServiceUrl = process.env.BRANCH_SERVICE_URL || 'http://localhost:3003';
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Body() createBranchDto: any) {
     try {
       const response = await firstValueFrom(
-        this.httpService.post('http://localhost:3003/branches', createBranchDto)
+        this.httpService.post(`${this.branchServiceUrl}/branches`, createBranchDto)
       );
       return response.data;
     } catch (error) {
@@ -39,7 +43,7 @@ export class BranchController {
     if (sortBy) params.append('sortBy', sortBy);
     if (sortOrder) params.append('sortOrder', sortOrder);
 
-    const url = `http://localhost:3003/branches${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${this.branchServiceUrl}/branches${params.toString() ? '?' + params.toString() : ''}`;
     const response = await firstValueFrom(
       this.httpService.get(url)
     );
@@ -50,7 +54,7 @@ export class BranchController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
-      this.httpService.get(`http://localhost:3003/branches/${id}`)
+      this.httpService.get(`${this.branchServiceUrl}/branches/${id}`)
     );
     return response.data;
   }
@@ -59,7 +63,24 @@ export class BranchController {
   @Get('name/:name')
   async findByName(@Param('name') name: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`http://localhost:3003/branches/name/${name}`)
+      this.httpService.get(`${this.branchServiceUrl}/branches/name/${name}`)
+    );
+    return response.data;
+  }
+
+  // Internal routes for service-to-service communication (no auth required)
+  @Get('internal/name/:name')
+  async findByNameInternal(@Param('name') name: string) {
+    const response = await firstValueFrom(
+      this.httpService.get(`${this.branchServiceUrl}/branches/name/${name}`)
+    );
+    return response.data;
+  }
+
+  @Get('internal/:id')
+  async findOneInternal(@Param('id', ParseIntPipe) id: number) {
+    const response = await firstValueFrom(
+      this.httpService.get(`${this.branchServiceUrl}/branches/${id}`)
     );
     return response.data;
   }
@@ -69,7 +90,7 @@ export class BranchController {
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateBranchDto: any) {
     try {
       const response = await firstValueFrom(
-        this.httpService.patch(`http://localhost:3003/branches/${id}`, updateBranchDto)
+        this.httpService.patch(`${this.branchServiceUrl}/branches/${id}`, updateBranchDto)
       );
       return response.data;
     } catch (error) {
@@ -84,7 +105,7 @@ export class BranchController {
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
-      this.httpService.delete(`http://localhost:3003/branches/${id}`)
+      this.httpService.delete(`${this.branchServiceUrl}/branches/${id}`)
     );
     return response.data;
   }

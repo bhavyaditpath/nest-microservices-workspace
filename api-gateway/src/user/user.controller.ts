@@ -5,13 +5,17 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('users')
 export class UserController {
-  constructor(private httpService: HttpService) {}
+  private readonly userServiceUrl: string;
+
+  constructor(private httpService: HttpService) {
+    this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3004';
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Body() createUserDto: any) {
     const response = await firstValueFrom(
-      this.httpService.post('http://localhost:3004/users', createUserDto)
+      this.httpService.post(`${this.userServiceUrl}/users`, createUserDto)
     );
     return response.data;
   }
@@ -20,7 +24,7 @@ export class UserController {
   @Get()
   async findAll(@Query('branchId') branchId?: string) {
     const response = await firstValueFrom(
-      this.httpService.get('http://localhost:3004/users', { params: { branchId } })
+      this.httpService.get(`${this.userServiceUrl}/users`, { params: { branchId } })
     );
     return response.data;
   }
@@ -29,7 +33,7 @@ export class UserController {
   @Get('count')
   async count(@Query('branchId', ParseIntPipe) branchId: number) {
     const response = await firstValueFrom(
-      this.httpService.get(`http://localhost:3004/users/count?branchId=${branchId}`)
+      this.httpService.get(`${this.userServiceUrl}/users/count?branchId=${branchId}`)
     );
     return response.data;
   }
@@ -38,7 +42,7 @@ export class UserController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
-      this.httpService.get(`http://localhost:3004/users/${id}`)
+      this.httpService.get(`${this.userServiceUrl}/users/${id}`)
     );
     return response.data;
   }
@@ -47,7 +51,7 @@ export class UserController {
   @Get('username/:username')
   async findByUsername(@Param('username') username: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`http://localhost:3004/users/username/${username}`)
+      this.httpService.get(`${this.userServiceUrl}/users/username/${username}`)
     );
     return response.data;
   }
@@ -56,7 +60,7 @@ export class UserController {
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: any) {
     const response = await firstValueFrom(
-      this.httpService.patch(`http://localhost:3004/users/${id}`, updateUserDto)
+      this.httpService.patch(`${this.userServiceUrl}/users/${id}`, updateUserDto)
     );
     return response.data;
   }
@@ -65,7 +69,7 @@ export class UserController {
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
-      this.httpService.delete(`http://localhost:3004/users/${id}`)
+      this.httpService.delete(`${this.userServiceUrl}/users/${id}`)
     );
     return response.data;
   }
@@ -74,7 +78,7 @@ export class UserController {
   @Patch(':id/restore')
   async restore(@Param('id', ParseIntPipe) id: number) {
     const response = await firstValueFrom(
-      this.httpService.patch(`http://localhost:3004/users/${id}/restore`)
+      this.httpService.patch(`${this.userServiceUrl}/users/${id}/restore`)
     );
     return response.data;
   }

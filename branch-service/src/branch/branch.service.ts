@@ -137,7 +137,8 @@ export class BranchService {
 
   private async getUserCountByBranch(branchId: number): Promise<number> {
     try {
-      const response = await this.httpService.get(`http://localhost:3004/users/count?branchId=${branchId}`).toPromise();
+      const apiGatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:3004';
+      const response = await this.httpService.get(`${apiGatewayUrl}/users/count?branchId=${branchId}`).toPromise();
       if (!response || !response.data) return 0;
       return response.data;
     } catch {
