@@ -13,13 +13,17 @@ export class InventoryService {
   }
 
   async findAll(user: User, params?: InventorySearchParams) {
-    const page = Number(params?.page) || 1;
-    const pageSize = Number(params?.pageSize) || 10;
-    const search = params?.search?.trim();
-    const sortBy = params?.sortBy;
-    const sortOrder = params?.sortOrder?.toUpperCase() === "DESC" ? "DESC" : "ASC";
+    const page = Math.max(Number(params?.page) || 1, 1);
+    const pageSize = Math.max(Number(params?.pageSize) || 10, 1);
 
-    return this.findWithPagination(user, page, pageSize, search, sortBy, sortOrder);
+    return this.findWithPagination(
+      user,
+      page,
+      pageSize,
+      params?.search?.trim(),
+      params?.sortBy,
+      params?.sortOrder?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
+    );
   }
 
   private async findWithPagination(
@@ -30,86 +34,103 @@ export class InventoryService {
     sortBy?: string,
     sortOrder: 'ASC' | 'DESC' = 'ASC',
   ) {
-    let rows: PurchaseData[];
-      // Call purchase-service to get purchases
-      const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}`;
-      const response = await firstValueFrom(this.httpService.get(url));
-      rows = response.data.data;
+    const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}`;
+    const response = await firstValueFrom(this.httpService.get(url));
+    const rows: PurchaseData[] = response.data.data ?? [];
 
-    // Apply role-based filtering (assuming rows include request data)
-    if (user.role === UserRole.ADMIN) {
-      // Admin sees all their purchases
-      rows = rows.filter(r => r.createdBy === user.id);
-    } else {
-      // Non-admin sees only purchases where request is null or delivered
-      rows = rows.filter(r => r.createdBy === user.id && (!r.request || r.request.status === RequestStatus.DELIVERED));
-    }
+    const filteredRows = rows.filter(r => {
+      if (r.createdBy !== user.id) return false;
 
-    if (search) {
-      rows = rows.filter(r =>
+      if (user.role === UserRole.ADMIN) return true;
+
+      return !r.request || r.request.status === RequestStatus.DELIVERED;
+    });
+
+    const searchedRows = search
+      ? filteredRows.filter(r =>
         r.productName.toLowerCase().includes(search.toLowerCase()) ||
         r.brand.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+      )
+      : filteredRows;
 
-    const inventoryMap = new Map();
+    const inventoryMap = new Map<string, any>();
 
-    for (const r of rows) {
+    for (const r of searchedRows) {
       const key = `${r.productName}-${r.brand}-${r.branchId}`;
+      const quantity = Number(r.quantity);
 
-      if (!inventoryMap.has(key)) {
-        inventoryMap.set(key, {
+      let item = inventoryMap.get(key);
+
+      if (!item) {
+        item = {
           id: r.id,
           productName: r.productName,
           brand: r.brand,
           currentQuantity: 0,
+          totalPurchased: 0,
           unit: r.unit,
-          pricePerUnit: r.pricePerUnit,
+          pricePerUnit: 0,
           lowStockThreshold: r.lowStockThreshold,
           branchId: r.branchId,
           branch: r.branch,
           lastPurchaseDate: r.createdAt,
-          totalPurchased: 0,
-        });
+          totalPrice: 0,
+          totalQuantityForPrice: 0,
+        };
+        inventoryMap.set(key, item);
       }
 
-      const item = inventoryMap.get(key);
-      item.currentQuantity += Number(r.quantity);
-      item.totalPurchased += Number(r.quantity);
+      item.currentQuantity += quantity;
+      item.totalPurchased += quantity;
+      item.totalPrice += quantity * r.pricePerUnit;
+      item.totalQuantityForPrice += quantity;
 
       if (r.createdAt > item.lastPurchaseDate) {
         item.lastPurchaseDate = r.createdAt;
-        item.pricePerUnit = r.pricePerUnit;
+      }
+    }
+
+    for (const item of inventoryMap.values()) {
+      if (item.totalQuantityForPrice > 0) {
+        item.pricePerUnit = item.totalPrice / item.totalQuantityForPrice;
       }
     }
 
     let items = Array.from(inventoryMap.values());
 
-    // Sort
-    const validSort = ['productName', 'brand', 'currentQuantity', 'unit', 'lowStockThreshold', 'lastPurchaseDate'];
-    const sortField = validSort.includes(sortBy || '') ? sortBy : 'productName';
+    const allowedSortFields = new Set([
+      'productName',
+      'brand',
+      'currentQuantity',
+      'unit',
+      'lowStockThreshold',
+      'lastPurchaseDate',
+    ]);
+
+    const sortField = allowedSortFields.has(sortBy ?? '') ? sortBy! : 'productName';
 
     items.sort((a, b) => {
-      let aVal: any = a[sortField as keyof typeof a];
-      let bVal: any = b[sortField as keyof typeof b];
+      const aVal = a[sortField];
+      const bVal = b[sortField];
 
-      let cmp: number;
+      let result: number;
+
       if (sortField === 'lastPurchaseDate') {
-        cmp = new Date(aVal).getTime() - new Date(bVal).getTime();
+        result = new Date(aVal).getTime() - new Date(bVal).getTime();
       } else if (typeof aVal === 'string') {
-        cmp = aVal.localeCompare(bVal);
+        result = aVal.localeCompare(bVal);
       } else {
-        cmp = Number(aVal) - Number(bVal);
+        result = Number(aVal) - Number(bVal);
       }
-      return sortOrder === 'DESC' ? -cmp : cmp;
+
+      return sortOrder === 'DESC' ? -result : result;
     });
 
     const total = items.length;
     const offset = (page - 1) * pageSize;
-    const paginatedItems = items.slice(offset, offset + pageSize);
 
     return {
-      items: paginatedItems,
+      items: items.slice(offset, offset + pageSize),
       total,
       page,
       pageSize,
