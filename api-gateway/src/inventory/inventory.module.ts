@@ -1,20 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { HttpModule } from '@nestjs/axios';
 import { InventoryController } from './inventory.controller';
 
 @Module({
-  imports: [
-    ClientsModule.register([
-      {
-        name: 'INVENTORY_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: 'localhost',
-          port: 8877,
-        },
-      },
-    ]),
-  ],
+  imports: [HttpModule],
   controllers: [InventoryController],
 })
 export class InventoryModule {}

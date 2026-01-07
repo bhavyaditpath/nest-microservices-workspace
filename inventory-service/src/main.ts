@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from 'shared';
@@ -16,16 +15,6 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Connect microservice
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.TCP,
-    options: {
-      host: 'localhost',
-      port: 8877,
-    },
-  });
-
-  await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3007);
 }
 bootstrap();

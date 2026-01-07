@@ -2,6 +2,7 @@ export * from './common/api-response.util';
 export * from './common/global-exception.filter';
 export * from './interfaces/api-response.interface';
 export * from './interfaces/user.interface';
+export * from './interfaces/jwt-payload.interface';
 export * from './interfaces/purchase-data.interface';
 export * from './enums/role.enum';
 export * from './enums/notification-type.enum';

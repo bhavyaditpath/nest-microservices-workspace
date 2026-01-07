@@ -30,10 +30,11 @@ export class InventoryService {
     sortBy?: string,
     sortOrder: 'ASC' | 'DESC' = 'ASC',
   ) {
-    // Call purchase-service to get purchases
-    const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}`;
-    const response = await firstValueFrom(this.httpService.get(url));
-    let rows: PurchaseData[] = response.data.data;
+    let rows: PurchaseData[];
+      // Call purchase-service to get purchases
+      const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}`;
+      const response = await firstValueFrom(this.httpService.get(url));
+      rows = response.data.data;
 
     // Apply role-based filtering (assuming rows include request data)
     if (user.role === UserRole.ADMIN) {
@@ -115,9 +116,15 @@ export class InventoryService {
   }
 
   async getStockSummary(user: User, search?: string) {
-    const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}`;
-    const response = await firstValueFrom(this.httpService.get(url));
-    let rows: PurchaseData[] = response.data.data;
+    let rows: PurchaseData[];
+    try {
+      const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}`;
+      const response = await firstValueFrom(this.httpService.get(url));
+      rows = response.data.data;
+    } catch (error) {
+      console.error('Error calling purchase service:', error);
+      throw new Error('Failed to fetch purchases from purchase service');
+    }
 
     // Apply role-based filtering
     if (user.role === UserRole.ADMIN) {

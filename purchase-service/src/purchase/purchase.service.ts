@@ -1,16 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import { Purchase } from './purchase.entity';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
 
 @Injectable()
 export class PurchaseService {
+    private readonly branchServiceUrl: string;
+
     constructor(
         @InjectRepository(Purchase)
         private purchaseRepository: Repository<Purchase>,
-    ) { }
+        private httpService: HttpService,
+    ) {
+        this.branchServiceUrl = process.env.BRANCH_SERVICE_URL || 'http://localhost:3003';
+    }
 
     async findDuplicate(productName: string, userId: number) {
         return this.purchaseRepository.findOne({
@@ -50,7 +57,35 @@ export class PurchaseService {
             query.andWhere('purchase.userId = :userId', { userId });
         }
 
-        return query.getMany();
+        const purchases = await query.getMany();
+
+        // Enrich purchases with branch data
+        const enrichedPurchases = await Promise.all(
+            purchases.map(async (purchase) => {
+                let branch: { id: number; name: string } | null = null;
+                if (purchase.branchId) {
+                    try {
+                        const response = await firstValueFrom(
+                            this.httpService.get(`${this.branchServiceUrl}/branches/${purchase.branchId}`)
+                        );
+                        const branchData = response.data.data || response.data;
+                        if (branchData) {
+                            branch = { id: branchData.id, name: branchData.name };
+                        }
+                    } catch (error) {
+                        console.error(`Failed to fetch branch ${purchase.branchId}:`, error.message);
+                        branch = null;
+                    }
+                }
+
+                return {
+                    ...purchase,
+                    branch,
+                };
+            })
+        );
+
+        return enrichedPurchases;
     }
 
     async findOne(id: number) {
