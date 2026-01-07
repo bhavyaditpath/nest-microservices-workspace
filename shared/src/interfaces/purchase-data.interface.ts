@@ -6,6 +6,8 @@ export interface PurchaseData {
   brand: string;
   quantity: number;
   unit: string;
+  pricePerUnit: number;
+  totalPrice: number;
   lowStockThreshold: number;
   branchId: number;
   createdAt: Date;

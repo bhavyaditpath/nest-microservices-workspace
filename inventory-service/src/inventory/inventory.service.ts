@@ -64,6 +64,7 @@ export class InventoryService {
           brand: r.brand,
           currentQuantity: 0,
           unit: r.unit,
+          pricePerUnit: r.pricePerUnit,
           lowStockThreshold: r.lowStockThreshold,
           branchId: r.branchId,
           branch: r.branch,
@@ -78,6 +79,7 @@ export class InventoryService {
 
       if (r.createdAt > item.lastPurchaseDate) {
         item.lastPurchaseDate = r.createdAt;
+        item.pricePerUnit = r.pricePerUnit;
       }
     }
 

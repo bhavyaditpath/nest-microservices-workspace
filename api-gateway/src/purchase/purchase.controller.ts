@@ -16,6 +16,7 @@ export class PurchaseController {
   @Post()
   async create(@Body() createPurchaseDto: any, @Request() req) {
     createPurchaseDto.userId = req.user.userId;
+    createPurchaseDto.branchId = req.user.branchId;
     try {
       const response = await firstValueFrom(
         this.httpService.post(`${this.purchaseServiceUrl}/purchases`, createPurchaseDto)
