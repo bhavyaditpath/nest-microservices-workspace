@@ -7,9 +7,10 @@ import { UserModule } from './user/user.module';
 import { BranchModule } from './branch/branch.module';
 import { PurchaseModule } from './purchase/purchase.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { RequestModule } from './request/request.module';
 
 @Module({
-  imports: [HttpModule, AuthModule, UserModule, BranchModule, PurchaseModule, InventoryModule],
+  imports: [HttpModule, AuthModule, UserModule, BranchModule, PurchaseModule, InventoryModule, RequestModule],
   controllers: [AppController],
   providers: [AppService],
 })
