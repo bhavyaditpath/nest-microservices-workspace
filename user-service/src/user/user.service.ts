@@ -152,6 +152,10 @@ export class UserService {
     return this.userRepository.count({ where: { branchId, isRemoved: false } });
   }
 
+  async findByBranch(branchId: number): Promise<User[]> {
+    return this.userRepository.find({ where: { branchId, isRemoved: false } });
+  }
+
   async update(id: number, userDto: UpdateUserDto): Promise<ApiResponse> {
     const user = await this.userRepository.findOne({ where: { id, isRemoved: false } });
 

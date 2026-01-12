@@ -1,0 +1,142 @@
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { NotificationService } from './notification.service';
+import { CreateNotificationDto } from './dto/create-notification.dto';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { NotificationType } from 'shared';
+import { ApiResponseUtil } from 'shared';
+
+@Controller('notifications')
+export class NotificationController {
+  constructor(private readonly notificationService: NotificationService) {}
+
+  @Post()
+  async create(@Body() createNotificationDto: CreateNotificationDto) {
+    try {
+      const result = await this.notificationService.create(createNotificationDto);
+      return ApiResponseUtil.success(result, 'Notification created successfully');
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to create notification');
+    }
+  }
+
+  @Get('latest')
+  async getLatest(@Query('limit') limit?: string, @Query('userId') userId?: string) {
+    try {
+      const limitNum = limit ? +limit : 5;
+      const result = await this.notificationService.findLatest(limitNum, userId ? +userId : undefined);
+      return ApiResponseUtil.success(result);
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to fetch latest notifications');
+    }
+  }
+
+  @Get()
+  async findAll(
+    @Req() req,
+    @Query('type') type?: NotificationType,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      const pageNum = page ? +page : 1;
+      const limitNum = limit ? +limit : 10;
+      const userId = req.user?.id || req.query?.userId ? +req.query.userId : undefined;
+      const result = await this.notificationService.findAllWithReadStatus(type, pageNum, limitNum, userId);
+      return ApiResponseUtil.success(result);
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to fetch notifications');
+    }
+  }
+
+  @Get('unread-count')
+  async getUnreadCount(@Query('userId') userId: string) {
+    try {
+      const result = await this.notificationService.getUnreadCount(+userId);
+      return ApiResponseUtil.success(result);
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to fetch unread count');
+    }
+  }
+
+  @Get('user/:userId')
+  async findByUser(
+    @Param('userId') userId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      const pageNum = page ? +page : 1;
+      const limitNum = limit ? +limit : 10;
+      const result = await this.notificationService.findByUser(+userId, pageNum, limitNum);
+      return ApiResponseUtil.success(result);
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to fetch user notifications');
+    }
+  }
+
+  @Get('branch/:branchId')
+  async findByBranch(
+    @Param('branchId') branchId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      const pageNum = page ? +page : 1;
+      const limitNum = limit ? +limit : 10;
+      const result = await this.notificationService.findByBranch(+branchId, pageNum, limitNum);
+      return ApiResponseUtil.success(result);
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to fetch branch notifications');
+    }
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    try {
+      const result = await this.notificationService.findOne(+id);
+      return ApiResponseUtil.success(result);
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Notification not found');
+    }
+  }
+
+  @Patch(':id/read')
+  async markAsRead(@Param('id') id: string, @Query('userId') userId: string) {
+    try {
+      const result = await this.notificationService.markAsRead(+id, +userId);
+      return ApiResponseUtil.success(result, 'Notification marked as read');
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to mark notification as read');
+    }
+  }
+
+  @Patch('mark-all-read')
+  async markAllAsRead(@Query('userId') userId: string) {
+    try {
+      const result = await this.notificationService.markAllAsRead(+userId);
+      return ApiResponseUtil.success(result, 'All notifications marked as read');
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to mark all notifications as read');
+    }
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
+    try {
+      const result = await this.notificationService.update(+id, updateNotificationDto);
+      return ApiResponseUtil.success(result, 'Notification updated successfully');
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to update notification');
+    }
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    try {
+      await this.notificationService.remove(+id);
+      return ApiResponseUtil.success(null, 'Notification deleted successfully');
+    } catch (error) {
+      return ApiResponseUtil.error(error.message || 'Failed to delete notification');
+    }
+  }
+}

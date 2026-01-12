@@ -23,6 +23,11 @@ export class UserController {
     return this.userService.countUsersByBranch(branchId);
   }
 
+  @Get('by-branch/:branchId')
+  async findByBranch(@Param('branchId', ParseIntPipe) branchId: number) {
+    return this.userService.findByBranch(branchId);
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findOne(id);
