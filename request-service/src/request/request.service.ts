@@ -40,10 +40,6 @@ export class RequestService {
       return ApiResponseUtil.error('Only branch users can create requests');
     }
 
-    if (!createRequestDto.purchaseId) {
-      return ApiResponseUtil.error('Purchase ID is required');
-    }
-
     const request = this.requestRepository.create({
       ...createRequestDto,
       requestingUserId: requestingUser.id,
@@ -355,32 +351,28 @@ export class RequestService {
 
   // DELIVERED: BRANCH GETS STOCK -----------------
   private async handleDelivery(request: any) {
-    // Assuming branch gets a new purchase entry
-    // But in microservice, perhaps update or create via HTTP
-    // For simplicity, since branch is requesting, perhaps call purchase-service to add to branch user
-    // But the logic is to update the existing purchase? Wait, in original, branchPurchase.quantity = request.quantityRequested;
-    // But branchPurchase is request.purchase, which is admin's purchase?
-    // Wait, in original: const branchPurchase = request.purchase; branchPurchase.quantity = request.quantityRequested;
-    // But that would modify admin's purchase, but delivery should add to branch's inventory.
-    // Looking back: "BRANCH GETS STOCK" so probably create a new purchase for the branch user.
-    // But in original code, it modifies request.purchase, which is wrong.
-    // Wait, request.purchase is the admin's purchase that was requested.
-    // Probably, it should create a new purchase for the branch with the quantity.
-    // But in code, it sets branchPurchase.quantity = request.quantityRequested;
-    // Perhaps it's assuming the purchase is transferred.
-    // To keep logic, perhaps call purchase-service to create a new purchase for the branch.
-    // But for now, since it's complex, comment or simplify.
-
-    // For now, assume we need to create a new purchase for the requesting user
-    const newPurchase = {
-      ...request.purchase,
-      quantity: request.quantityRequested,
-      totalPrice: request.quantityRequested * request.purchase.pricePerUnit,
-      userId: request.requestingUserId,
-      branchId: null, // or fetch branch
-    };
-
+    // Create a new purchase for the requesting user with the requested quantity
+    // Need to get pricePerUnit from admin's purchases
     try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.purchaseServiceUrl}/purchases?userId=${request.adminUserId}`)
+      );
+      const purchases: PurchaseData[] = response.data.data ?? [];
+      const relevantPurchase = purchases.find(p => p.productName.toLowerCase() === request.productName.toLowerCase());
+      if (!relevantPurchase) {
+        console.error('No purchase found for delivery');
+        return;
+      }
+
+      const newPurchase = {
+        productName: request.productName,
+        quantity: request.quantityRequested,
+        pricePerUnit: relevantPurchase.pricePerUnit,
+        totalPrice: request.quantityRequested * relevantPurchase.pricePerUnit,
+        userId: request.requestingUserId,
+        branchId: null, // or fetch branch
+      };
+
       await firstValueFrom(
         this.httpService.post(`${this.purchaseServiceUrl}/purchases`, newPurchase)
       );
