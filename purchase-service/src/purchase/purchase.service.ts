@@ -6,10 +6,12 @@ import { firstValueFrom } from 'rxjs';
 import { Purchase } from './purchase.entity';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
+import { NotificationType } from 'shared';
 
 @Injectable()
 export class PurchaseService {
     private readonly branchServiceUrl: string;
+    private readonly notificationServiceUrl: string;
 
     constructor(
         @InjectRepository(Purchase)
@@ -17,6 +19,7 @@ export class PurchaseService {
         private httpService: HttpService,
     ) {
         this.branchServiceUrl = process.env.BRANCH_SERVICE_URL || 'http://localhost:3003';
+        this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
     }
 
     async findDuplicate(productName: string, userId: number) {
@@ -41,8 +44,7 @@ export class PurchaseService {
         // if (createPurchaseDto.branchId) {
         //   await this.alertService.generateAlertsForBranch(createPurchaseDto.branchId);
         // }
-        // TODO: Uncomment when notification service is available
-        // await this.createPurchaseNotifications(savedPurchase, user);
+        await this.createPurchaseNotifications(savedPurchase, createPurchaseDto);
 
         return savedPurchase;
     }
@@ -127,32 +129,31 @@ export class PurchaseService {
         return this.purchaseRepository.save(purchase);
     }
 
-    // TODO: Uncomment when notification service is available
-    // private async createPurchaseNotifications(purchase: Purchase, user: User): Promise<void> {
-    //   try {
-    //     const title = 'New Purchase Added';
-    //     const message = `${purchase.productName} (${purchase.brand}) - Quantity: ${purchase.quantity}, Price: ₹${purchase.pricePerUnit}`;
+    private async createPurchaseNotifications(purchase: Purchase, createPurchaseDto: CreatePurchaseDto): Promise<void> {
+      try {
+        const title = 'New Purchase Added';
+        const message = `${purchase.productName} (${purchase.brand}) - Quantity: ${purchase.quantity}, Price: ₹${purchase.pricePerUnit}`;
 
-    //     // Create branch-wide notification for all users in the branch
-    //     await this.notificationService.create({
-    //       title,
-    //       message,
-    //       type: NotificationType.BRANCH,
-    //       branchId: user.branchId,
-    //     });
+        // Create branch-wide notification for all users in the branch
+        await firstValueFrom(this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
+          title,
+          message,
+          type: NotificationType.BRANCH,
+          branchId: createPurchaseDto.branchId,
+        }));
 
-    //     // Create personal notification for the user who made the purchase
-    //     const personalTitle = 'Purchase Recorded';
-    //     const personalMessage = `Your purchase of ${purchase.productName} (${purchase.brand}) - Quantity: ${purchase.quantity} has been recorded successfully.`;
+        // Create personal notification for the user who made the purchase
+        const personalTitle = 'Purchase Recorded';
+        const personalMessage = `Your purchase of ${purchase.productName} (${purchase.brand}) - Quantity: ${purchase.quantity} has been recorded successfully.`;
 
-    //     await this.notificationService.create({
-    //       title: personalTitle,
-    //       message: personalMessage,
-    //       type: NotificationType.USER,
-    //       userId: user.id,
-    //     });
-    //   } catch (error) {
-    //     console.error('Failed to create purchase notifications:', error);
-    //   }
-    // }
+        await firstValueFrom(this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
+          title: personalTitle,
+          message: personalMessage,
+          type: NotificationType.USER,
+          userId: createPurchaseDto.userId,
+        }));
+      } catch (error) {
+        console.error('Failed to create purchase notifications:', error);
+      }
+    }
 }
