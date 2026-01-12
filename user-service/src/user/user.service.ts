@@ -230,12 +230,12 @@ export class UserService {
       const title = 'Welcome to Electric Inventory';
       const message = `New user ${user.username} has been registered in branch ${branchName}.`;
 
-      // await this.httpService.post('http://localhost:3003/notification', {
-      //   title,
-      //   message,
-      //   type: NotificationType.BRANCH,
-      //   branchId: user.branchId,
-      // }).toPromise();
+      await this.httpService.post('http://localhost:3009/notifications', {
+        title,
+        message,
+        type: NotificationType.BRANCH,
+        branchId: user.branchId,
+      }).toPromise();
     } catch (error) {
       console.error('Failed to create user registration notification:', error);
     }
