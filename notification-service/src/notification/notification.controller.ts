@@ -40,7 +40,7 @@ export class NotificationController {
     try {
       const pageNum = page ? +page : 1;
       const limitNum = limit ? +limit : 10;
-      const userId = req.user?.id || req.query?.userId ? +req.query.userId : undefined;
+      const userId = req.query?.userId ? +req.query.userId : undefined;
       const result = await this.notificationService.findAllWithReadStatus(type, pageNum, limitNum, userId);
       return ApiResponseUtil.success(result);
     } catch (error) {

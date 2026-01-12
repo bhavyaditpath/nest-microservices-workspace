@@ -11,3 +11,4 @@ export * from './utils/hash.util';
 export * from './dto/pagination-query.dto';
 export * from './dto/inventory-search-params.dto';
 export * from './enums/request-status.enum';
+export * from './dto/notificationDto.dto';

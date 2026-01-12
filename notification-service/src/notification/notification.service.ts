@@ -7,7 +7,7 @@ import { Notification } from './notification.entity';
 import { UserNotification } from './user-notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
-import { NotificationType } from 'shared';
+import { NotificationType, User } from 'shared';
 import { NotificationWithRead } from './interfaces/notification-with-read.interface';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class NotificationService {
     private userNotificationRepository: Repository<UserNotification>,
     private httpService: HttpService,
   ) {
-    this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3001';
+    this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3004';
   }
 
   async create(createDto: CreateNotificationDto): Promise<Notification> {
@@ -33,7 +33,7 @@ export class NotificationService {
     const notification = this.notificationRepository.create(createDto);
     const saved = await this.notificationRepository.save(notification);
 
-    let users: any[] = [];
+    let users: User[] = [];
 
     if (createDto.userId) {
       try {

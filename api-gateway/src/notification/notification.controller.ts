@@ -2,27 +2,19 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGua
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-
-interface CreateNotificationDto {
-  title: string;
-  message: string;
-  type: string;
-  userId?: number;
-  branchId?: number;
-}
+import { NotificationDto } from 'shared';
 
 @Controller('notifications')
 export class NotificationController {
   private readonly notificationServiceUrl: string;
-  private readonly logger = new Logger(NotificationController.name);
 
   constructor(private httpService: HttpService) {
     this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard) 
   @Post()
-  async create(@Body() createNotificationDto: CreateNotificationDto, @Request() req) {
+  async create(@Body() createNotificationDto: NotificationDto, @Request() req) {
     createNotificationDto.userId = req.user.userId;
     try {
       const response = await firstValueFrom(
@@ -30,7 +22,6 @@ export class NotificationController {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('Error creating notification', error);
       if (error.response) {
         throw new HttpException(error.response.data, error.response.status);
       }
@@ -136,10 +127,10 @@ export class NotificationController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('mark-all-read')
-  async markAllAsRead(@Query('userId') userId: string) {
+  async markAllAsRead(@Request() req) {
     try {
       const response = await firstValueFrom(
-        this.httpService.patch(`${this.notificationServiceUrl}/notifications/mark-all-read?userId=${userId}`)
+        this.httpService.patch(`${this.notificationServiceUrl}/notifications/mark-all-read?userId=${req.user.userId}`)
       );
       return response.data;
     } catch (error) {
@@ -177,15 +168,10 @@ export class NotificationController {
 
   // Internal routes for service-to-service communication (no auth required)
   @Post('internal')
-  async createInternal(@Body() createNotificationDto: any) {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post(`${this.notificationServiceUrl}/notifications`, createNotificationDto)
-      );
-      return response.data;
-    } catch (error) {
-      this.logger.error('Error creating notification internally', error);
-      throw error;
-    }
+  async createInternal(@Body() createNotificationDto: NotificationDto) {
+    const response = await firstValueFrom(
+      this.httpService.post(`${this.notificationServiceUrl}/notifications`, createNotificationDto)
+    );
+    return response.data;
   }
 }
