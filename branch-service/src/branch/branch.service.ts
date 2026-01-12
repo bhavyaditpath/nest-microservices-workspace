@@ -9,6 +9,7 @@ import { Branch } from './branch.entity';
 @Injectable()
 export class BranchService {
   private readonly branchRepository: Repository<Branch>;
+  private readonly notificationServiceUrl: string;
 
   constructor(
     @InjectRepository(Branch)
@@ -16,6 +17,7 @@ export class BranchService {
     private readonly httpService: HttpService,
   ) {
     this.branchRepository = repo;
+    this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
   }
 
   async create(createBranchDto: CreateBranchDto) {
@@ -126,10 +128,12 @@ export class BranchService {
       const title = 'New Branch Created';
       const message = `A new branch "${branch.name}" has been created at ${branch.address}.`;
 
-      // // For now, implement notification logic locally (e.g., save to database or send email)
-      // console.log('Creating notification:', { title, message, type: NotificationType.BRANCH, branchId: branch.id });
-
-      // TODO: Implement actual notification creation logic (e.g., save to notification table, send email, etc.)
+      await this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
+        title,
+        message,
+        type: NotificationType.BRANCH,
+        branchId: branch.id,
+      }).toPromise();
     } catch (error) {
       console.error('Failed to create branch creation notification:', error);
     }
