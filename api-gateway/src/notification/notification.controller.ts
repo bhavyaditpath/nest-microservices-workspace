@@ -11,7 +11,7 @@ interface CreateNotificationDto {
   branchId?: number;
 }
 
-@Controller('notification')
+@Controller('notifications')
 export class NotificationController {
   private readonly notificationServiceUrl: string;
   private readonly logger = new Logger(NotificationController.name);
@@ -53,21 +53,6 @@ export class NotificationController {
     return response.data;
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('with-read-status')
-  async findAllWithReadStatus(@Query() query: Record<string, unknown>, @Request() req) {
-    const params = new URLSearchParams();
-    Object.keys(query).forEach(key => {
-      if (query[key] !== undefined) params.append(key, String(query[key]));
-    });
-    params.append('userId', req.user.userId.toString());
-
-    const url = `${this.notificationServiceUrl}/notifications/with-read-status${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await firstValueFrom(
-      this.httpService.get(url)
-    );
-    return response.data;
-  }
 
   @UseGuards(JwtAuthGuard)
   @Get('latest')
@@ -125,10 +110,10 @@ export class NotificationController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('user/:userId/unread-count')
-  async getUnreadCount(@Param('userId', ParseIntPipe) userId: number) {
+  @Get('unread-count')
+  async getUnreadCount(@Query('userId') userId: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.notificationServiceUrl}/notifications/user/${userId}/unread-count`)
+      this.httpService.get(`${this.notificationServiceUrl}/notifications/unread-count?userId=${userId}`)
     );
     return response.data;
   }
@@ -150,11 +135,11 @@ export class NotificationController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('user/:userId/mark-all-read')
-  async markAllAsRead(@Param('userId', ParseIntPipe) userId: number) {
+  @Patch('mark-all-read')
+  async markAllAsRead(@Query('userId') userId: string) {
     try {
       const response = await firstValueFrom(
-        this.httpService.patch(`${this.notificationServiceUrl}/notifications/user/${userId}/mark-all-read`)
+        this.httpService.patch(`${this.notificationServiceUrl}/notifications/mark-all-read?userId=${userId}`)
       );
       return response.data;
     } catch (error) {
