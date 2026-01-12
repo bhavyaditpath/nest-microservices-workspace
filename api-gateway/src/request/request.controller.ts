@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { Request } from 'express';
 
 @Controller('request')
 export class RequestController {
@@ -13,61 +14,60 @@ export class RequestController {
 
   @UseGuards(JwtAuthGuard)
   @Get('admins')
-  async getAdminsForDropdown(@Query('productName') productName?: string) {
-    try {
-      console.log('API Gateway: Fetching admins for dropdown, productName:', productName);
+  async getAdminsForDropdown(@Req() req: Request, @Query('productName') productName?: string) {
+      const headers = { Authorization: req.headers.authorization };
       const response = await firstValueFrom(
-        this.httpService.get(`${this.requestServiceUrl}/request/admins`, { params: { productName } })
+        this.httpService.get(`${this.requestServiceUrl}/request/admins`, { params: { productName }, headers })
       );
-      console.log('API Gateway: Admins response:', response.data);
       return response.data;
-    } catch (error) {
-      console.error('API Gateway: Error fetching admins:', error);
-      throw error;
-    }
   }
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Body() createRequestDto: any) {
+  async create(@Req() req: Request, @Body() createRequestDto: any) {
+    const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.post(`${this.requestServiceUrl}/request`, createRequestDto)
+      this.httpService.post(`${this.requestServiceUrl}/request`, createRequestDto, { headers })
     );
     return response.data;
   }
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(@Query() query: any) {
+  async findAll(@Req() req: Request, @Query() query: any) {
+    const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.get(`${this.requestServiceUrl}/request`, { params: query })
+      this.httpService.get(`${this.requestServiceUrl}/request`, { params: query, headers })
     );
     return response.data;
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.get(`${this.requestServiceUrl}/request/${id}`)
+      this.httpService.get(`${this.requestServiceUrl}/request/${id}`, { headers })
     );
     return response.data;
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateRequestDto: any) {
+  async update(@Req() req: Request, @Param('id') id: string, @Body() updateRequestDto: any) {
+    const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.patch(`${this.requestServiceUrl}/request/${id}`, updateRequestDto)
+      this.httpService.patch(`${this.requestServiceUrl}/request/${id}`, updateRequestDto, { headers })
     );
     return response.data;
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  async remove(@Req() req: Request, @Param('id') id: string) {
+    const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.delete(`${this.requestServiceUrl}/request/${id}`)
+      this.httpService.delete(`${this.requestServiceUrl}/request/${id}`, { headers })
     );
     return response.data;
   }

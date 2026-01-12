@@ -25,9 +25,10 @@ export class PurchaseController {
     }
 
     @Get()
-    async findAll(@Query('userId') userId?: string) {
+    async findAll(@Query('userId') userId?: string, @Query('productName') productName?: string) {
         const data = await this.purchaseService.findAll(
             userId ? parseInt(userId) : undefined,
+            productName,
         );
         return ApiResponseUtil.success(data, 'Purchases retrieved successfully');
     }

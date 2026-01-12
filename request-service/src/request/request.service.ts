@@ -10,7 +10,7 @@ import { UserRole, RequestStatus, ApiResponseUtil, User, PurchaseData } from 'sh
 
 @Injectable()
 export class RequestService {
-  private readonly authServiceUrl: string;
+  private readonly userServiceUrl: string;
   private readonly purchaseServiceUrl: string;
 
   constructor(
@@ -18,7 +18,7 @@ export class RequestService {
     private requestRepository: Repository<Request>,
     private httpService: HttpService,
   ) {
-    this.authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+    this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3004';
     this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
   }
 
@@ -26,7 +26,7 @@ export class RequestService {
     // Fetch admin user via HTTP
     try {
       const adminResponse = await firstValueFrom(
-        this.httpService.get(`${this.authServiceUrl}/users/${createRequestDto.adminUserId}`)
+        this.httpService.get(`${this.userServiceUrl}/users/${createRequestDto.adminUserId}`)
       );
       const adminUser = adminResponse.data.data || adminResponse.data;
       if (!adminUser || adminUser.role !== UserRole.ADMIN) {
@@ -38,6 +38,10 @@ export class RequestService {
 
     if (requestingUser.role !== UserRole.BRANCH) {
       return ApiResponseUtil.error('Only branch users can create requests');
+    }
+
+    if (!createRequestDto.purchaseId) {
+      return ApiResponseUtil.error('Purchase ID is required');
     }
 
     const request = this.requestRepository.create({
@@ -101,24 +105,24 @@ export class RequestService {
 
         try {
           const reqUserRes = await firstValueFrom(
-            this.httpService.get(`${this.authServiceUrl}/users/${item.requestingUserId}`)
+            this.httpService.get(`${this.userServiceUrl}/users/${item.requestingUserId}`)
           );
           requestingUser = reqUserRes.data.data || reqUserRes.data;
-        } catch (e) {}
+        } catch (e) { }
 
         try {
           const adminUserRes = await firstValueFrom(
-            this.httpService.get(`${this.authServiceUrl}/users/${item.adminUserId}`)
+            this.httpService.get(`${this.userServiceUrl}/users/${item.adminUserId}`)
           );
           adminUser = adminUserRes.data.data || adminUserRes.data;
-        } catch (e) {}
+        } catch (e) { }
 
         try {
           const purchaseRes = await firstValueFrom(
             this.httpService.get(`${this.purchaseServiceUrl}/purchases/${item.purchaseId}`)
           );
           purchase = purchaseRes.data.data || purchaseRes.data;
-        } catch (e) {}
+        } catch (e) { }
 
         return {
           ...item,
@@ -160,24 +164,24 @@ export class RequestService {
 
     try {
       const reqUserRes = await firstValueFrom(
-        this.httpService.get(`${this.authServiceUrl}/users/${req.requestingUserId}`)
+        this.httpService.get(`${this.userServiceUrl}/users/${req.requestingUserId}`)
       );
       requestingUser = reqUserRes.data.data || reqUserRes.data;
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const adminUserRes = await firstValueFrom(
-        this.httpService.get(`${this.authServiceUrl}/users/${req.adminUserId}`)
+        this.httpService.get(`${this.userServiceUrl}/users/${req.adminUserId}`)
       );
       adminUser = adminUserRes.data.data || adminUserRes.data;
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const purchaseRes = await firstValueFrom(
         this.httpService.get(`${this.purchaseServiceUrl}/purchases/${req.purchaseId}`)
       );
       purchase = purchaseRes.data.data || purchaseRes.data;
-    } catch (e) {}
+    } catch (e) { }
 
     const enriched = {
       ...req,
@@ -388,50 +392,39 @@ export class RequestService {
   // ADMIN DROPDOWN ------------------------------
   async getAdminsForDropdown(productName?: string, user?: User) {
     if (productName) {
-      try {
-        const response = await firstValueFrom(
-          this.httpService.get(`${this.purchaseServiceUrl}/purchases?userId=${user?.id}`)
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.purchaseServiceUrl}/purchases?productName=${productName}`)
+      );
+      const purchases: PurchaseData[] = response.data.data ?? [];
+
+      const userIds = [...new Set(
+        purchases
+          .map((p: any) => p.userId)
+          .filter(id => id !== user?.id)
+      )];
+
+      if (userIds.length === 0) {
+        const allAdminsRes = await firstValueFrom(
+          this.httpService.get(`${this.userServiceUrl}/users?role=${UserRole.ADMIN}`)
         );
-        const purchases: PurchaseData[] = response.data.data ?? [];
-
-        const userIds = [...new Set(
-          purchases
-            .filter(p => p.productName.toLowerCase() === productName.toLowerCase())
-            .map((p: any) => p.userId)
-            .filter(id => id !== user?.id)
-        )];
-
-        if (userIds.length === 0) {
-          const allAdminsRes = await firstValueFrom(
-            this.httpService.get(`${this.authServiceUrl}/users?role=${UserRole.ADMIN}`)
-          );
-          return ApiResponseUtil.success(allAdminsRes.data.data ?? []);
-        }
-
-        const admins: any[] = [];
-        for (const id of userIds) {
-          try {
-            const userRes = await firstValueFrom(
-              this.httpService.get(`${this.authServiceUrl}/users/${id}`)
-            );
-            if (userRes.data.data?.role === UserRole.ADMIN) {
-              admins.push(userRes.data.data);
-            }
-          } catch (e) {}
-        }
-        return ApiResponseUtil.success(admins);
-      } catch (error) {
-        return ApiResponseUtil.error('Failed to fetch admins');
+        return ApiResponseUtil.success(allAdminsRes.data.data ?? []);
       }
+
+      const admins: any[] = [];
+      for (const id of userIds) {
+        const userRes = await firstValueFrom(
+          this.httpService.get(`${this.userServiceUrl}/users/${id}`)
+        );
+        if (userRes.data.data?.role === UserRole.ADMIN) {
+          admins.push(userRes.data.data);
+        }
+      }
+      return ApiResponseUtil.success(admins);
     } else {
-      try {
-        const response = await firstValueFrom(
-          this.httpService.get(`${this.authServiceUrl}/users?role=${UserRole.ADMIN}`)
-        );
-        return ApiResponseUtil.success(response.data.data ?? []);
-      } catch (error) {
-        return ApiResponseUtil.error('Failed to fetch admins');
-      }
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.userServiceUrl}/users?role=${UserRole.ADMIN}`)
+      );
+      return ApiResponseUtil.success(response.data ?? []);
     }
   }
 

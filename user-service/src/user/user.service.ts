@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { User } from './user.entity';
-import { HashUtil, NotificationType, ApiResponse, ApiResponseUtil } from 'shared';
+import { HashUtil, NotificationType, ApiResponse, ApiResponseUtil, UserRole } from 'shared';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 
@@ -63,12 +63,16 @@ export class UserService {
     return ApiResponseUtil.success(user, 'User created successfully');
   }
 
-  async findAll(page?: number, pageSize?: number, search?: string, sortBy?: string, sortOrder?: 'ASC' | 'DESC') {
+  async findAll(page?: number, pageSize?: number, search?: string, sortBy?: string, sortOrder?: 'ASC' | 'DESC', role?: string) {
     if (page && pageSize) {
-      return this.searchUsersWithPagination(page, pageSize, search, sortBy, sortOrder);
+      return this.searchUsersWithPagination(page, pageSize, search, sortBy, sortOrder, role);
     }
 
-    return this.userRepository.find();
+    if (role) {
+      return this.userRepository.find({ where: { role: role as UserRole, isRemoved: false } });
+    }
+
+    return this.userRepository.find({ where: { isRemoved: false } });
   }
 
   private async searchUsersWithPagination(
@@ -76,7 +80,8 @@ export class UserService {
     pageSize: number,
     search?: string,
     sortBy?: string,
-    sortOrder?: 'ASC' | 'DESC'
+    sortOrder?: 'ASC' | 'DESC',
+    role?: string
   ): Promise<ApiResponse> {
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')

@@ -47,14 +47,21 @@ export class PurchaseService {
         return savedPurchase;
     }
 
-    async findAll(userId?: number) {
+    async findAll(userId?: number, productName?: string) {
         const query = this.purchaseRepository
             .createQueryBuilder('purchase')
-            .where('purchase.isRemoved = :isRemoved', { isRemoved: false })
-            .andWhere("purchase.createdAt >= NOW() - INTERVAL '3 days'");
+            .where('purchase.isRemoved = :isRemoved', { isRemoved: false });
+
+        if (!productName) {
+            query.andWhere("purchase.createdAt >= NOW() - INTERVAL '3 days'");
+        }
 
         if (userId) {
             query.andWhere('purchase.userId = :userId', { userId });
+        }
+
+        if (productName) {
+            query.andWhere('purchase.productName = :productName', { productName });
         }
 
         const purchases = await query.getMany();
