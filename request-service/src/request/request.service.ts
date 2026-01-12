@@ -6,12 +6,13 @@ import { firstValueFrom } from 'rxjs';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { Request } from './request.entity';
-import { UserRole, RequestStatus, ApiResponseUtil, User, PurchaseData } from 'shared';
+import { UserRole, RequestStatus, ApiResponseUtil, User, PurchaseData, NotificationType } from 'shared';
 
 @Injectable()
 export class RequestService {
   private readonly userServiceUrl: string;
   private readonly purchaseServiceUrl: string;
+  private readonly notificationServiceUrl: string;
 
   constructor(
     @InjectRepository(Request)
@@ -20,6 +21,7 @@ export class RequestService {
   ) {
     this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3004';
     this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
+    this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
   }
 
   async create(createRequestDto: CreateRequestDto, requestingUser: User) {
@@ -48,8 +50,7 @@ export class RequestService {
 
     const saved = await this.requestRepository.save(request);
 
-    // TODO: Uncomment when notification service is available
-    // await this.createRequestCreationNotifications(saved, requestingUser);
+    await this.createRequestCreationNotifications(saved, requestingUser);
 
     return ApiResponseUtil.success(saved, 'Request created successfully');
   }
@@ -222,10 +223,9 @@ export class RequestService {
     Object.assign(request, dto);
     const updated = await this.requestRepository.save(request);
 
-    // TODO: Uncomment when notification service is available
-    // if (oldStatus && newStatus && oldStatus !== newStatus) {
-    //   await this.createRequestStatusNotification(request, oldStatus, newStatus, user);
-    // }
+    if (oldStatus && newStatus && oldStatus !== newStatus) {
+      await this.createRequestStatusNotification(request, oldStatus, newStatus, user);
+    }
 
     // FIFO deduction WHEN ACCEPTED
     if (newStatus === RequestStatus.ACCEPT && oldStatus !== RequestStatus.ACCEPT) {
@@ -425,7 +425,48 @@ export class RequestService {
     return ApiResponseUtil.success(null, 'Request removed successfully');
   }
 
-  // TODO: Uncomment when notification service is available
-  // private async createRequestStatusNotification(...) { ... }
-  // private async createRequestCreationNotifications(...) { ... }
+  private async createRequestStatusNotification(request: any, oldStatus: RequestStatus, newStatus: RequestStatus, user: User): Promise<void> {
+    try {
+      const title = `Request Status Updated`;
+      const message = `Request #${request.id} status changed from ${oldStatus} to ${newStatus}.`;
+
+      // Notify the other party
+      if (user.role === UserRole.ADMIN) {
+        // Admin updated, notify branch user
+        await firstValueFrom(this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
+          title,
+          message,
+          type: NotificationType.USER,
+          userId: request.requestingUserId,
+        }));
+      } else if (user.role === UserRole.BRANCH) {
+        // Branch updated, notify admin
+        await firstValueFrom(this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
+          title,
+          message,
+          type: NotificationType.USER,
+          userId: request.adminUserId,
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to create request status notification:', error);
+    }
+  }
+
+  private async createRequestCreationNotifications(request: Request, requestingUser: User): Promise<void> {
+    try {
+      const title = 'New Request Created';
+      const message = `A new request has been created by branch user.`;
+
+      // Notify admin
+      await firstValueFrom(this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
+        title,
+        message,
+        type: NotificationType.USER,
+        userId: request.adminUserId,
+      }));
+    } catch (error) {
+      console.error('Failed to create request creation notification:', error);
+    }
+  }
 }
