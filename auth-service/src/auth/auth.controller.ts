@@ -61,4 +61,9 @@ export class AuthController {
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     return this.authService.googleLogin(req, res);
   }
+
+  @Post('send-report-email')
+  async sendReportEmail(@Body() body: { to: string; subject: string; html: string; attachment?: { filename: string; content: Buffer; contentType: string } }) {
+    return this.authService.sendReportEmail(body.to, body.subject, body.html, body.attachment);
+  }
 }

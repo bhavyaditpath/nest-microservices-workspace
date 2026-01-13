@@ -265,4 +265,13 @@ export class AuthService {
 
     return ApiResponseUtil.success(profile, 'Profile retrieved successfully');
   }
+
+  async sendReportEmail(to: string, subject: string, html: string, attachment?: { filename: string; content: Buffer; contentType: string }): Promise<ApiResponse> {
+    try {
+      await this.emailService.sendReportEmail(to, subject, html, attachment);
+      return ApiResponseUtil.success(null, 'Report email sent successfully');
+    } catch (error) {
+      return ApiResponseUtil.error('Failed to send report email');
+    }
+  }
 }

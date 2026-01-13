@@ -16,6 +16,16 @@ export class EmailService {
         pass: this.configService.get<string>('EMAIL_PASS'),
       },
     });
+
+    this.transporter.verify((err, success) => {
+      if (err) {
+        console.error("SMTP Connection Error:", err);
+      } else {
+        console.log("SMTP Server is ready to take messages");
+      }
+    });
+
+
   }
 
   async sendResetPasswordEmail(to: string, token: string): Promise<void> {
@@ -23,9 +33,7 @@ export class EmailService {
     const resetUrl = `${frontendUrl}/auth/reset-password?token=${token}`;
 
     const mailOptions = {
-      from:
-        this.configService.get<string>('EMAIL_FROM') ||
-        this.configService.get<string>('EMAIL_USER'),
+      from: this.configService.get<string>('EMAIL_FROM') || this.configService.get<string>('EMAIL_USER'),
       to,
       subject: 'Reset Your Password',
       html: `
@@ -36,6 +44,30 @@ export class EmailService {
         <p>If you didn't request this, please ignore this email.</p>
       `,
     };
+
+    await this.transporter.sendMail(mailOptions);
+  }
+
+  async sendReportEmail(
+    to: string,
+    subject: string,
+    html: string,
+    attachment?: {
+      filename: string;
+      content: Buffer;
+      contentType: string;
+    }
+  ): Promise<void> {
+    const mailOptions: any = {
+      from: this.configService.get<string>('EMAIL_FROM') || this.configService.get<string>('EMAIL_USER'),
+      to,
+      subject,
+      html,
+    };
+
+    if (attachment) {
+      mailOptions.attachments = [attachment];
+    }
 
     await this.transporter.sendMail(mailOptions);
   }

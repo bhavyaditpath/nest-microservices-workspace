@@ -14,3 +14,5 @@ export * from './dto/inventory-search-params.dto';
 export * from './enums/request-status.enum';
 export * from './dto/notificationDto.dto';
 export * from './enums/report-type.enum';
+export * from './enums/delivery-method.enum';
+export * from './utils/template-loader';
