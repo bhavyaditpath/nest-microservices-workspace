@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGua
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { NotificationDto } from 'shared';
+import * as shared from 'shared';
 
 @Controller('notifications')
 export class NotificationController {
@@ -14,7 +14,7 @@ export class NotificationController {
 
   @UseGuards(JwtAuthGuard) 
   @Post()
-  async create(@Body() createNotificationDto: NotificationDto, @Request() req) {
+  async create(@Body() createNotificationDto: shared.NotificationDto, @Request() req) {
     createNotificationDto.userId = req.user.userId;
     try {
       const response = await firstValueFrom(
@@ -102,9 +102,10 @@ export class NotificationController {
 
   @UseGuards(JwtAuthGuard)
   @Get('unread-count')
-  async getUnreadCount(@Query('userId') userId: string) {
+  async getUnreadCount(@shared.CurrentUser() user: shared.User) {
+    console.log('Fetching unread count for user ID:', user.id);
     const response = await firstValueFrom(
-      this.httpService.get(`${this.notificationServiceUrl}/notifications/unread-count?userId=${userId}`)
+      this.httpService.get(`${this.notificationServiceUrl}/notifications/unread-count?userId=${user.id}`)
     );
     return response.data;
   }
@@ -168,7 +169,7 @@ export class NotificationController {
 
   // Internal routes for service-to-service communication (no auth required)
   @Post('internal')
-  async createInternal(@Body() createNotificationDto: NotificationDto) {
+  async createInternal(@Body() createNotificationDto: shared.NotificationDto) {
     const response = await firstValueFrom(
       this.httpService.post(`${this.notificationServiceUrl}/notifications`, createNotificationDto)
     );

@@ -1,5 +1,6 @@
 export * from './common/api-response.util';
 export * from './common/global-exception.filter';
+export * from './decorators/current-user.decorator';
 export * from './interfaces/api-response.interface';
 export * from './interfaces/user.interface';
 export * from './interfaces/jwt-payload.interface';

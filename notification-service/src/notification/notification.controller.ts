@@ -2,8 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
-import { NotificationType } from 'shared';
-import { ApiResponseUtil } from 'shared';
+import { NotificationType, ApiResponseUtil, CurrentUser, User } from 'shared';
 
 @Controller('notifications')
 export class NotificationController {
@@ -49,9 +48,11 @@ export class NotificationController {
   }
 
   @Get('unread-count')
-  async getUnreadCount(@Query('userId') userId: string) {
+  async getUnreadCount(@CurrentUser() user: User) {
     try {
-      const result = await this.notificationService.getUnreadCount(+userId);
+      const result = await this.notificationService.getUnreadCount(user.id);
+      console.log('Unread count:', result);
+      console.log('User ID:', user.id);
       return ApiResponseUtil.success(result);
     } catch (error) {
       return ApiResponseUtil.error(error.message || 'Failed to fetch unread count');
