@@ -22,9 +22,9 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(@Query('branchId') branchId?: string) {
+  async findAll(@Query() query: any) {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.userServiceUrl}/users`, { params: { branchId } })
+      this.httpService.get(`${this.userServiceUrl}/users`, { params: query })
     );
     return response.data;
   }

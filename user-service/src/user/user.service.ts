@@ -206,8 +206,6 @@ export class UserService {
       branchId,
     };
 
-    console.log('Update data being passed to repository:', updateData);
-
     // Apply updates
     await this.userRepository.update(id, updateData);
     const updatedUser = await this.userRepository.findOne({ where: { id } });
