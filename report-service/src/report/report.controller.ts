@@ -22,31 +22,31 @@ export class ReportController {
   @Get('daily')
   async getDailyReport(@Query('userId') userId?: string) {
     const data = await this.reportService.getDailyReport(userId ? parseInt(userId) : undefined);
-    return ApiResponseUtil.success(data, 'Daily report retrieved successfully');
+    return data;
   }
 
   @Get('weekly')
   async getWeeklyReport(@Query('userId') userId?: string) {
     const data = await this.reportService.getWeeklyReport(userId ? parseInt(userId) : undefined);
-    return ApiResponseUtil.success(data, 'Weekly report retrieved successfully');
+    return data;
   }
 
   @Get('monthly')
   async getMonthlyReport(@Query('userId') userId?: string) {
     const data = await this.reportService.getMonthlyReport(userId ? parseInt(userId) : undefined);
-    return ApiResponseUtil.success(data, 'Monthly report retrieved successfully');
+    return data;
   }
 
   @Get('half-yearly')
   async getHalfYearlyReport(@Query('userId') userId?: string) {
     const data = await this.reportService.getHalfYearlyReport(userId ? parseInt(userId) : undefined);
-    return ApiResponseUtil.success(data, 'Half-yearly report retrieved successfully');
+    return data;
   }
 
   @Get('yearly')
   async getYearlyReport(@Query('userId') userId?: string) {
     const data = await this.reportService.getYearlyReport(userId ? parseInt(userId) : undefined);
-    return ApiResponseUtil.success(data, 'Yearly report retrieved successfully');
+    return data;
   }
 
   @Post('preferences')

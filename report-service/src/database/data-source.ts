@@ -9,7 +9,7 @@ export const AppDataSource = new DataSource({
   password: 'ips12345',
   database: 'microservices_db',
   entities: [ReportPreference],
-  migrations: ['src/database/migrations/*.ts'],
+  migrations: ['dist/database/migrations/*.js'],
   synchronize: false,
   logging: true,
 });
