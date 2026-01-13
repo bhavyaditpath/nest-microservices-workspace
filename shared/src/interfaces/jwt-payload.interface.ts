@@ -5,4 +5,5 @@ export interface JwtPayload {
   username: string;
   role: UserRole;
   branchId: number;
+  type: 'access' | 'refresh';
 }

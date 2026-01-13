@@ -23,7 +23,7 @@ export class AuthService {
     private jwtService: JwtService,
     private emailService: EmailService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   async register(dto: RegisterDto): Promise<ApiResponse> {
     const exists = await this.userRepo.findOne({
@@ -178,7 +178,10 @@ export class AuthService {
       branchId: user.branchId,
     };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '45m' });
+    const accessToken = this.jwtService.sign(
+      { ...payload, type: 'access' },
+      { expiresIn: '45m' },
+    );
 
     const refreshTokenString = this.jwtService.sign(
       { ...payload, type: 'refresh' },
