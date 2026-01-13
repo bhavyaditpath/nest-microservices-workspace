@@ -129,11 +129,63 @@ export class PurchaseService {
         return this.purchaseRepository.save(purchase);
     }
 
+    async getReportSummary(startDate: Date, endDate: Date, userId?: number) {
+      let query = this.purchaseRepository
+        .createQueryBuilder('purchase')
+        .leftJoin('purchase.user', 'user')
+        .select([
+          'COUNT(purchase.id) AS "totalPurchases"',
+          'SUM(purchase.quantity) AS "totalQuantity"',
+          'SUM(purchase.totalPrice) AS "totalPrice"',
+          'AVG(purchase.totalPrice) AS "averagePrice"',
+        ])
+        .where('purchase.createdAt BETWEEN :startDate AND :endDate', {
+          startDate,
+          endDate,
+        })
+        .andWhere('purchase.isRemoved = :isRemoved', { isRemoved: false });
+  
+      if (userId) {
+        query = query.andWhere('purchase.userId = :userId', { userId });
+      }
+  
+      const result = await query.getRawOne();
+  
+      // Handle case where no purchases exist for the period
+      if (!result) {
+        return {
+          period: {
+            startDate,
+            endDate,
+          },
+          summary: {
+            totalPurchases: 0,
+            totalQuantity: 0,
+            totalPrice: 0,
+            averagePrice: 0,
+          },
+        };
+      }
+  
+      return {
+        period: {
+          startDate,
+          endDate,
+        },
+        summary: {
+          totalPurchases: parseInt(result.totalPurchases),
+          totalQuantity: parseFloat(result.totalQuantity),
+          totalPrice: parseFloat(result.totalPrice),
+          averagePrice: parseFloat(result.averagePrice),
+        },
+      };
+    }
+  
     private async createPurchaseNotifications(purchase: Purchase, createPurchaseDto: CreatePurchaseDto): Promise<void> {
       try {
         const title = 'New Purchase Added';
         const message = `${purchase.productName} (${purchase.brand}) - Quantity: ${purchase.quantity}, Price: ₹${purchase.pricePerUnit}`;
-
+  
         // Create branch-wide notification for all users in the branch
         await firstValueFrom(this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
           title,
@@ -141,11 +193,11 @@ export class PurchaseService {
           type: NotificationType.BRANCH,
           branchId: createPurchaseDto.branchId,
         }));
-
+  
         // Create personal notification for the user who made the purchase
         const personalTitle = 'Purchase Recorded';
         const personalMessage = `Your purchase of ${purchase.productName} (${purchase.brand}) - Quantity: ${purchase.quantity} has been recorded successfully.`;
-
+  
         await firstValueFrom(this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
           title: personalTitle,
           message: personalMessage,
@@ -156,4 +208,4 @@ export class PurchaseService {
         console.error('Failed to create purchase notifications:', error);
       }
     }
-}
+  }

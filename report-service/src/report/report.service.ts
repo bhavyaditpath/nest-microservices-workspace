@@ -10,13 +10,15 @@ import * as ExcelJS from 'exceljs';
 import { ReportPreference } from './entities/report-preference.entity';
 import { CreateReportPreferenceDto } from './dto/create-report-preference.dto';
 import { UpdateReportPreferenceDto } from './dto/update-report-preference.dto';
-import { ReportType, DeliveryMethod, ApiResponseUtil, PurchaseData, renderTemplate } from 'shared';
+import { ReportType, DeliveryMethod, ApiResponseUtil, PurchaseData, NotificationType } from 'shared';
+// import { renderTemplate } from 'shared/utils/template-loader';
 
 @Injectable()
 export class ReportService {
    private readonly purchaseServiceUrl: string;
    private readonly userServiceUrl: string;
    private readonly authServiceUrl: string;
+   private readonly notificationServiceUrl: string;
 
    constructor(
      @InjectRepository(ReportPreference)
@@ -26,6 +28,7 @@ export class ReportService {
      this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
      this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3003';
      this.authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+     this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
    }
 
   async getDailyReport(userId?: number) {
@@ -344,29 +347,29 @@ export class ReportService {
     const reportTypeDisplay = reportType.charAt(0).toUpperCase() + reportType.slice(1).toLowerCase();
     const userDisplay = userId ? `User ID: ${userId}` : 'All Users';
 
-    const html = renderTemplate("report-email", {
-      reportTypeDisplay,
-      reportTypeDisplayLower: reportTypeDisplay.toLowerCase(),
-      generatedDate,
-      userDisplay,
-    });
+    // const html = renderTemplate("report-email", {
+    //   reportTypeDisplay,
+    //   reportTypeDisplayLower: reportTypeDisplay.toLowerCase(),
+    //   generatedDate,
+    //   userDisplay,
+    // });
 
-    try {
-      await firstValueFrom(
-        this.httpService.post(`${this.authServiceUrl}/auth/send-report-email`, {
-          to,
-          subject,
-          html,
-          attachment: {
-            filename: fileName,
-            content: buffer,
-            contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          },
-        })
-      );
-    } catch (error) {
-      console.error('Failed to send report email:', error);
-    }
+    // try {
+    //   await firstValueFrom(
+    //     this.httpService.post(`${this.authServiceUrl}/auth/send-report-email`, {
+    //       to,
+    //       subject,
+    //       html,
+    //       attachment: {
+    //         filename: fileName,
+    //         content: buffer,
+    //         contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    //       },
+    //     })
+    //   );
+    // } catch (error) {
+    //   console.error('Failed to send report email:', error);
+    // }
   }
 
   async processScheduledReports(): Promise<void> {
@@ -451,24 +454,23 @@ export class ReportService {
     }
   }
 
-  // Note: NotificationService is not available, so commented out
-  // private async createReportNotification(
-  //   preference: ReportPreference,
-  //   reportType: ReportType,
-  //   action: 'saved' | 'sent'
-  // ): Promise<void> {
-  //   try {
-  //     const title = `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report ${action === 'sent' ? 'Sent' : 'Generated'}`;
-  //     const message = `Your ${reportType.toLowerCase()} report has been ${action === 'sent' ? 'sent via email' : 'saved locally'}.`;
+  private async createReportNotification(
+    preference: ReportPreference,
+    reportType: ReportType,
+    action: 'saved' | 'sent'
+  ): Promise<void> {
+    try {
+      const title = `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report ${action === 'sent' ? 'Sent' : 'Generated'}`;
+      const message = `Your ${reportType.toLowerCase()} report has been ${action === 'sent' ? 'sent via email' : 'saved locally'}.`;
 
-  //     await this.notificationService.create({
-  //       title,
-  //       message,
-  //       type: NotificationType.USER,
-  //       userId: preference.userId,
-  //     });
-  //   } catch (error) {
-  //     console.error('Failed to create report notification:', error);
-  //   }
-  // }
+      await firstValueFrom(this.httpService.post(`${this.notificationServiceUrl}/notifications`, {
+        title,
+        message,
+        type: NotificationType.USER,
+        userId: preference.userId,
+      }));
+    } catch (error) {
+      console.error('Failed to create report notification:', error);
+    }
+  }
 }

@@ -50,7 +50,21 @@ export class PurchaseController {
 
     @Delete(':id')
     async remove(@Param('id', ParseIntPipe) id: number) {
-        await this.purchaseService.remove(id);
-        return ApiResponseUtil.success(null, 'Purchase deleted successfully');
+      await this.purchaseService.remove(id);
+      return ApiResponseUtil.success(null, 'Purchase deleted successfully');
     }
-}
+  
+    @Get('report-summary')
+    async getReportSummary(
+      @Query('startDate') startDate: string,
+      @Query('endDate') endDate: string,
+      @Query('userId') userId?: string,
+    ) {
+      const data = await this.purchaseService.getReportSummary(
+        new Date(startDate),
+        new Date(endDate),
+        userId ? parseInt(userId) : undefined,
+      );
+      return ApiResponseUtil.success(data, 'Report summary retrieved successfully');
+    }
+  }
