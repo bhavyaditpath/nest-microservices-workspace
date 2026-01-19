@@ -20,32 +20,32 @@ export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
   @Get('daily')
-  async getDailyReport(@Query('userId') userId?: string) {
-    const data = await this.reportService.getDailyReport(userId ? parseInt(userId) : undefined);
+  async getDailyReport(@Query('userId', ParseIntPipe) userId: number) {
+    const data = await this.reportService.getDailyReport(userId);
     return data;
   }
 
   @Get('weekly')
-  async getWeeklyReport(@Query('userId') userId?: string) {
-    const data = await this.reportService.getWeeklyReport(userId ? parseInt(userId) : undefined);
+  async getWeeklyReport(@Query('userId', ParseIntPipe) userId: number) {
+    const data = await this.reportService.getWeeklyReport(userId);
     return data;
   }
 
   @Get('monthly')
-  async getMonthlyReport(@Query('userId') userId?: string) {
-    const data = await this.reportService.getMonthlyReport(userId ? parseInt(userId) : undefined);
+  async getMonthlyReport(@Query('userId', ParseIntPipe) userId: number) {
+    const data = await this.reportService.getMonthlyReport(userId);
     return data;
   }
 
   @Get('half-yearly')
-  async getHalfYearlyReport(@Query('userId') userId?: string) {
-    const data = await this.reportService.getHalfYearlyReport(userId ? parseInt(userId) : undefined);
+  async getHalfYearlyReport(@Query('userId', ParseIntPipe) userId: number) {
+    const data = await this.reportService.getHalfYearlyReport(userId);
     return data;
   }
 
   @Get('yearly')
-  async getYearlyReport(@Query('userId') userId?: string) {
-    const data = await this.reportService.getYearlyReport(userId ? parseInt(userId) : undefined);
+  async getYearlyReport(@Query('userId', ParseIntPipe) userId: number) {
+    const data = await this.reportService.getYearlyReport(userId);
     return data;
   }
 
@@ -58,8 +58,9 @@ export class ReportController {
 
   @Get('preferences')
   async getUserPreferences(@Query('userId', ParseIntPipe) userId: number) {
+    console.log('Fetching preferences for userId:', userId);
     const data = await this.reportService.findUserPreferences(userId);
-    return ApiResponseUtil.success(data, 'User preferences retrieved successfully');
+    return data;
   }
 
   @Put('preferences/:id')
@@ -79,8 +80,8 @@ export class ReportController {
   }
 
   @Post('generate/:reportType')
-  async generateReport(@Param('reportType') reportType: string, @Query('userId') userId?: string) {
-    const filePath = await this.reportService.generateAndSaveReport(reportType as ReportType, userId ? parseInt(userId) : undefined);
+  async generateReport(@Param('reportType') reportType: string, @Query('userId', ParseIntPipe) userId: number) {
+    const filePath = await this.reportService.generateAndSaveReport(reportType as ReportType, userId);
     return ApiResponseUtil.success({ filePath }, 'Report generated and saved successfully');
   }
 }

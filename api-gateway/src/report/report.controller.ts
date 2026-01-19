@@ -14,11 +14,11 @@ export class ReportController {
 
   @UseGuards(JwtAuthGuard)
   @Get('daily')
-  async getDailyReport(@Query('userId') userId?: string) {
+  async getDailyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      if (userId) params.append('userId', userId);
-      const url = `${this.reportServiceUrl}/reports/daily${params.toString() ? '?' + params.toString() : ''}`;
+      params.append('userId', user.userId.toString());
+      const url = `${this.reportServiceUrl}/reports/daily?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
     } catch (error) {
@@ -31,11 +31,11 @@ export class ReportController {
 
   @UseGuards(JwtAuthGuard)
   @Get('weekly')
-  async getWeeklyReport(@Query('userId') userId?: string) {
+  async getWeeklyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      if (userId) params.append('userId', userId);
-      const url = `${this.reportServiceUrl}/reports/weekly${params.toString() ? '?' + params.toString() : ''}`;
+      params.append('userId', user.userId.toString());
+      const url = `${this.reportServiceUrl}/reports/weekly?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
     } catch (error) {
@@ -48,11 +48,11 @@ export class ReportController {
 
   @UseGuards(JwtAuthGuard)
   @Get('monthly')
-  async getMonthlyReport(@Query('userId') userId?: string) {
+  async getMonthlyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      if (userId) params.append('userId', userId);
-      const url = `${this.reportServiceUrl}/reports/monthly${params.toString() ? '?' + params.toString() : ''}`;
+      params.append('userId', user.userId.toString());
+      const url = `${this.reportServiceUrl}/reports/monthly?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
     } catch (error) {
@@ -65,11 +65,11 @@ export class ReportController {
 
   @UseGuards(JwtAuthGuard)
   @Get('half-yearly')
-  async getHalfYearlyReport(@Query('userId') userId?: string) {
+  async getHalfYearlyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      if (userId) params.append('userId', userId);
-      const url = `${this.reportServiceUrl}/reports/half-yearly${params.toString() ? '?' + params.toString() : ''}`;
+      params.append('userId', user.userId.toString());
+      const url = `${this.reportServiceUrl}/reports/half-yearly?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
     } catch (error) {
@@ -82,11 +82,11 @@ export class ReportController {
 
   @UseGuards(JwtAuthGuard)
   @Get('yearly')
-  async getYearlyReport(@Query('userId') userId?: string) {
+  async getYearlyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      if (userId) params.append('userId', userId);
-      const url = `${this.reportServiceUrl}/reports/yearly${params.toString() ? '?' + params.toString() : ''}`;
+      params.append('userId', user.userId.toString());
+      const url = `${this.reportServiceUrl}/reports/yearly?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
     } catch (error) {
@@ -101,7 +101,7 @@ export class ReportController {
   @Post('preferences')
   async createPreference(@CurrentUser() user: any, @Body() createPreferenceDto: any) {
     try {
-      const requestBody = { ...createPreferenceDto, userId: user.id };
+      const requestBody = { ...createPreferenceDto, userId: user.userId };
       const response = await firstValueFrom(
         this.httpService.post(`${this.reportServiceUrl}/reports/preferences`, requestBody)
       );
@@ -119,7 +119,7 @@ export class ReportController {
   async findUserPreferences(@CurrentUser() user: any) {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.reportServiceUrl}/reports/preferences?userId=${user.id}`)
+        this.httpService.get(`${this.reportServiceUrl}/reports/preferences?userId=${user.userId}`)
       );
       return response.data;
     } catch (error) {
@@ -183,7 +183,7 @@ export class ReportController {
   async generateReport(@Param('reportType') reportType: string, @CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      params.append('userId', user.id.toString());
+      params.append('userId', user.userId.toString());
       const url = `${this.reportServiceUrl}/reports/generate/${reportType}?${params.toString()}`;
       const response = await firstValueFrom(
         this.httpService.post(url)

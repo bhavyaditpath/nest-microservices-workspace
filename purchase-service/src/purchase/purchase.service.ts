@@ -129,8 +129,8 @@ export class PurchaseService {
     return this.purchaseRepository.save(purchase);
   }
 
-  async getReportSummary(startDate: string, endDate: string, userId?: number) {
-    let query = this.purchaseRepository
+  async getReportSummary(startDate: string, endDate: string, userId: number) {
+    const query = this.purchaseRepository
       .createQueryBuilder('purchase')
       // .leftJoin('purchase.user', 'user')
       .select([
@@ -143,11 +143,8 @@ export class PurchaseService {
         startDate,
         endDate,
       })
-      .andWhere('purchase.isRemoved = :isRemoved', { isRemoved: false });
-
-    if (userId) {
-      query = query.andWhere('purchase.userId = :userId', { userId });
-    }
+      .andWhere('purchase.isRemoved = :isRemoved', { isRemoved: false })
+      .andWhere('purchase.userId = :userId', { userId });
 
     const result = await query.getRawOne();
 

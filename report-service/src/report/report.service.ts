@@ -30,15 +30,17 @@ export class ReportService {
     this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
   }
 
-  async getDailyReport(userId?: number) {
+  async getDailyReport(userId: number) {
     const now = new Date();
     const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0); // Set to midnight today
 
-    return this.generateReport(startOfDay, now, userId);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999); // Set to end of today
+    return this.generateReport(startOfDay, endOfDay, userId);
   }
 
-  async getWeeklyReport(userId?: number) {
+  async getWeeklyReport(userId: number) {
     const now = new Date();
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
@@ -47,7 +49,7 @@ export class ReportService {
     return this.generateReport(startOfWeek, now, userId);
   }
 
-  async getMonthlyReport(userId?: number) {
+  async getMonthlyReport(userId: number) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -55,7 +57,7 @@ export class ReportService {
     return this.generateReport(startOfMonth, now, userId);
   }
 
-  async getHalfYearlyReport(userId?: number) {
+  async getHalfYearlyReport(userId: number) {
     const now = new Date();
     let startOfHalfYear = new Date(now);
 
@@ -73,7 +75,7 @@ export class ReportService {
     return this.generateReport(startOfHalfYear, now, userId);
   }
 
-  async getYearlyReport(userId?: number) {
+  async getYearlyReport(userId: number) {
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     startOfYear.setHours(0, 0, 0, 0);
@@ -81,11 +83,9 @@ export class ReportService {
     return this.generateReport(startOfYear, now, userId);
   }
 
-  private async generateReport(startDate: Date, endDate: Date, userId?: number) {
+  private async generateReport(startDate: Date, endDate: Date, userId: number) {
     try {
-      const url = userId
-        ? `${this.purchaseServiceUrl}/purchases/report-summary?userId=${userId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-        : `${this.purchaseServiceUrl}/purchases/report-summary?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+      const url = `${this.purchaseServiceUrl}/purchases/report-summary?userId=${userId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
 
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data.data;
@@ -123,7 +123,7 @@ export class ReportService {
 
   async findUserPreferences(userId: number): Promise<ReportPreference[]> {
     return this.reportPreferenceRepository.find({
-      where: { userId, isRemoved: false },
+      where: { userId },
     });
   }
 
@@ -194,7 +194,7 @@ export class ReportService {
     return `${reportType}_${dateStr}_${timeStr}${userSuffix}.xlsx`;
   }
 
-  private async generateReportData(reportType: ReportType, userId?: number) {
+  private async generateReportData(reportType: ReportType, userId: number) {
     switch (reportType) {
       case ReportType.DAILY:
         return await this.getDailyReport(userId);
@@ -271,7 +271,7 @@ export class ReportService {
     return workbook;
   }
 
-  async generateAndSaveReport(reportType: ReportType, userId?: number): Promise<string> {
+  async generateAndSaveReport(reportType: ReportType, userId: number): Promise<string> {
     const reportData = await this.generateReportData(reportType, userId);
 
     const folderPath = this.getReportFolder(reportType);
@@ -286,7 +286,7 @@ export class ReportService {
     return filePath;
   }
 
-  private async generateReportBuffer(reportType: ReportType, userId?: number): Promise<Buffer> {
+  private async generateReportBuffer(reportType: ReportType, userId: number): Promise<Buffer> {
     const reportData = await this.generateReportData(reportType, userId);
     const workbook = this.createReportWorkbook(reportType, reportData, userId);
     return await workbook.xlsx.writeBuffer() as any;

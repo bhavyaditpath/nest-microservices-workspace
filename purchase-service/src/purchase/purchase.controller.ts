@@ -19,6 +19,12 @@ import { ApiResponseUtil } from 'shared';
 export class PurchaseController {
     constructor(private readonly purchaseService: PurchaseService) { }
 
+    @Post()
+    async create(@Body() createPurchaseDto: CreatePurchaseDto) {
+        const data = await this.purchaseService.create(createPurchaseDto);
+        return ApiResponseUtil.success(data, 'Purchase created successfully');
+    }
+
     @Get('report-summary')
     async getReportSummary(@Query() dto: GetReportSummaryDto) {
         console.log('DTO RECEIVED:', dto);
