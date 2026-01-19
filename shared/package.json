@@ -13,6 +13,7 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "express": "^4.18.2",
+    "handlebars": "^4.7.8",
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
