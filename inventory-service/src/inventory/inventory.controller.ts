@@ -11,7 +11,7 @@ export class InventoryController {
   @UseGuards(JwtAuthGuard)
   @Get()
   async findAll(@Request() req, @Query() query: shared.InventorySearchParams) {
-    const user: shared.User = { id: req.user.sub, role: req.user.role };
+    const user: shared.User = { id: req.user.branchId, role: req.user.role };
     const result = await this.inventoryService.findAll(user, query);
     return ApiResponseUtil.success(result, 'Inventory retrieved successfully');
   }
@@ -19,7 +19,7 @@ export class InventoryController {
   @UseGuards(JwtAuthGuard)
   @Get('summary')
   async getStockSummary(@Request() req, @Query('search') search?: string) {
-    const user: shared.User = { id: req.user.sub, role: req.user.role };
+    const user: shared.User = { id: req.user.branchId, role: req.user.role };
     const result = await this.inventoryService.getStockSummary(user, search);
     return ApiResponseUtil.success(result, 'Stock summary retrieved successfully');
   }

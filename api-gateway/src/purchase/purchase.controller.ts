@@ -34,7 +34,7 @@ export class PurchaseController {
   @UseGuards(JwtAuthGuard)
   @Get()
   async findAll(@Request() req) {
-    const userId = req.user.userId;
+    const userId = req.user.branchId;
     const params = new URLSearchParams();
     if (userId) params.append('userId', userId.toString());
 

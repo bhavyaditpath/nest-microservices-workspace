@@ -49,7 +49,7 @@ export class PurchaseService {
     return savedPurchase;
   }
 
-  async findAll(userId?: number, productName?: string, Is3Days?: string) {
+  async findAll(branchId?: number, productName?: string, Is3Days?: string) {
     const query = this.purchaseRepository
       .createQueryBuilder('purchase')
       .where('purchase.isRemoved = :isRemoved', { isRemoved: false });
@@ -58,8 +58,8 @@ export class PurchaseService {
         query.andWhere("purchase.createdAt >= NOW() - INTERVAL '3 days'");
     }
 
-    if (userId) {
-      query.andWhere('purchase.userId = :userId', { userId });
+    if (branchId) {
+      query.andWhere('purchase.branchId = :branchId', { branchId });
     }
 
     if (productName) {
