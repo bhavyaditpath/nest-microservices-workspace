@@ -10,9 +10,10 @@ import { InventoryModule } from './inventory/inventory.module';
 import { RequestModule } from './request/request.module';
 import { NotificationModule } from './notification/notification.module';
 import { ReportModule } from './report/report.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
-  imports: [HttpModule, AuthModule, UserModule, BranchModule, PurchaseModule, InventoryModule, RequestModule, NotificationModule, ReportModule],
+  imports: [HttpModule, AuthModule, UserModule, BranchModule, PurchaseModule, InventoryModule, RequestModule, NotificationModule, ReportModule, DashboardModule],
   controllers: [AppController],
   providers: [AppService],
 })
