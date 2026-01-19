@@ -12,20 +12,33 @@ import {
 import { PurchaseService } from './purchase.service';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
+import { GetReportSummaryDto } from './dto/get-report-summary.dto';
 import { ApiResponseUtil } from 'shared';
 
 @Controller('purchases')
 export class PurchaseController {
     constructor(private readonly purchaseService: PurchaseService) { }
 
-    @Post()
-    async create(@Body() createPurchaseDto: CreatePurchaseDto) {
-        const data = await this.purchaseService.create(createPurchaseDto);
-        return ApiResponseUtil.success(data, 'Purchase created successfully');
+    @Get('report-summary')
+    async getReportSummary(@Query() dto: GetReportSummaryDto) {
+        console.log('DTO RECEIVED:', dto);
+        const data = await this.purchaseService.getReportSummary(
+            dto.startDate,
+            dto.endDate,
+            dto.userId,
+        );
+
+        return ApiResponseUtil.success(
+            data,
+            'Report summary retrieved successfully',
+        );
     }
 
     @Get()
-    async findAll(@Query('userId') userId?: string, @Query('productName') productName?: string) {
+    async findAll(
+        @Query('userId') userId?: string,
+        @Query('productName') productName?: string,
+    ) {
         const data = await this.purchaseService.findAll(
             userId ? parseInt(userId) : undefined,
             productName,
@@ -50,21 +63,8 @@ export class PurchaseController {
 
     @Delete(':id')
     async remove(@Param('id', ParseIntPipe) id: number) {
-      await this.purchaseService.remove(id);
-      return ApiResponseUtil.success(null, 'Purchase deleted successfully');
+        await this.purchaseService.remove(id);
+        return ApiResponseUtil.success(null, 'Purchase deleted successfully');
     }
-  
-    @Get('report-summary')
-    async getReportSummary(
-      @Query('startDate') startDate: string,
-      @Query('endDate') endDate: string,
-      @Query('userId') userId?: string,
-    ) {
-      const data = await this.purchaseService.getReportSummary(
-        new Date(startDate),
-        new Date(endDate),
-        userId ? parseInt(userId) : undefined,
-      );
-      return ApiResponseUtil.success(data, 'Report summary retrieved successfully');
-    }
-  }
+
+}

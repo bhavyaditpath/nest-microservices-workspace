@@ -10,26 +10,25 @@ import * as ExcelJS from 'exceljs';
 import { ReportPreference } from './entities/report-preference.entity';
 import { CreateReportPreferenceDto } from './dto/create-report-preference.dto';
 import { UpdateReportPreferenceDto } from './dto/update-report-preference.dto';
-import { ReportType, DeliveryMethod, ApiResponseUtil, PurchaseData, NotificationType } from 'shared';
-// import { renderTemplate } from 'shared/utils/template-loader';
+import { ReportType, DeliveryMethod, ApiResponseUtil, NotificationType, renderTemplate } from 'shared';
 
 @Injectable()
 export class ReportService {
-   private readonly purchaseServiceUrl: string;
-   private readonly userServiceUrl: string;
-   private readonly authServiceUrl: string;
-   private readonly notificationServiceUrl: string;
+  private readonly purchaseServiceUrl: string;
+  private readonly userServiceUrl: string;
+  private readonly authServiceUrl: string;
+  private readonly notificationServiceUrl: string;
 
-   constructor(
-     @InjectRepository(ReportPreference)
-     private reportPreferenceRepository: Repository<ReportPreference>,
-     private httpService: HttpService,
-   ) {
-     this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
-     this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3003';
-     this.authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
-     this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
-   }
+  constructor(
+    @InjectRepository(ReportPreference)
+    private reportPreferenceRepository: Repository<ReportPreference>,
+    private httpService: HttpService,
+  ) {
+    this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
+    this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3003';
+    this.authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+    this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
+  }
 
   async getDailyReport(userId?: number) {
     const now = new Date();
@@ -85,58 +84,18 @@ export class ReportService {
   private async generateReport(startDate: Date, endDate: Date, userId?: number) {
     try {
       const url = userId
-        ? `${this.purchaseServiceUrl}/purchases?userId=${userId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-        : `${this.purchaseServiceUrl}/purchases?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+        ? `${this.purchaseServiceUrl}/purchases/report-summary?userId=${userId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+        : `${this.purchaseServiceUrl}/purchases/report-summary?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
 
       const response = await firstValueFrom(this.httpService.get(url));
-      const purchases: PurchaseData[] = response.data.data ?? [];
-
-      // Filter by date
-      const filteredPurchases = purchases.filter(p =>
-        new Date(p.createdAt) >= startDate &&
-        new Date(p.createdAt) <= endDate
-      );
-
-      if (filteredPurchases.length === 0) {
-        return {
-          period: {
-            startDate,
-            endDate,
-          },
-          summary: {
-            totalPurchases: 0,
-            totalQuantity: 0,
-            totalPrice: 0,
-            averagePrice: 0,
-          },
-        };
-      }
-
-      const totalPurchases = filteredPurchases.length;
-      const totalQuantity = filteredPurchases.reduce((sum, p) => sum + p.quantity, 0);
-      const totalPrice = filteredPurchases.reduce((sum, p) => sum + p.totalPrice, 0);
-      const averagePrice = totalPurchases > 0 ? totalPrice / totalPurchases : 0;
-
-      return {
-        period: {
-          startDate,
-          endDate,
-        },
-        summary: {
-          totalPurchases,
-          totalQuantity,
-          totalPrice,
-          averagePrice,
-        },
-      };
+      return response.data.data;
     } catch (error) {
-      console.error('Error fetching purchases:', error);
+      console.error('Error fetching report summary:', error);
       throw new Error('Failed to generate report');
     }
   }
 
   async createPreference(userId: number, createDto: CreateReportPreferenceDto): Promise<any> {
-    // Check for unique constraint - user can't have multiple preferences for same report type
     const existingPreference = await this.reportPreferenceRepository.findOne({
       where: {
         userId,
@@ -147,16 +106,20 @@ export class ReportService {
     });
 
     if (existingPreference) {
-      return ApiResponseUtil.error(`Report preference for ${createDto.reportType} already exists for this user`);
+      return ApiResponseUtil.error(
+        `Report preference for ${createDto.reportType} already exists for this user`
+      );
     }
 
     const preference = this.reportPreferenceRepository.create({
       ...createDto,
       userId,
     });
+
     const savedPreference = await this.reportPreferenceRepository.save(preference);
     return ApiResponseUtil.success(savedPreference, 'Report preference created successfully');
   }
+
 
   async findUserPreferences(userId: number): Promise<ReportPreference[]> {
     return this.reportPreferenceRepository.find({
@@ -347,29 +310,29 @@ export class ReportService {
     const reportTypeDisplay = reportType.charAt(0).toUpperCase() + reportType.slice(1).toLowerCase();
     const userDisplay = userId ? `User ID: ${userId}` : 'All Users';
 
-    // const html = renderTemplate("report-email", {
-    //   reportTypeDisplay,
-    //   reportTypeDisplayLower: reportTypeDisplay.toLowerCase(),
-    //   generatedDate,
-    //   userDisplay,
-    // });
+    const html = renderTemplate("report-email", {
+      reportTypeDisplay,
+      reportTypeDisplayLower: reportTypeDisplay.toLowerCase(),
+      generatedDate,
+      userDisplay,
+    });
 
-    // try {
-    //   await firstValueFrom(
-    //     this.httpService.post(`${this.authServiceUrl}/auth/send-report-email`, {
-    //       to,
-    //       subject,
-    //       html,
-    //       attachment: {
-    //         filename: fileName,
-    //         content: buffer,
-    //         contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    //       },
-    //     })
-    //   );
-    // } catch (error) {
-    //   console.error('Failed to send report email:', error);
-    // }
+    try {
+      await firstValueFrom(
+        this.httpService.post(`${this.authServiceUrl}/auth/send-report-email`, {
+          to,
+          subject,
+          html,
+          attachment: {
+            filename: fileName,
+            content: buffer,
+            contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+        })
+      );
+    } catch (error) {
+      console.error('Failed to send report email:', error);
+    }
   }
 
   async processScheduledReports(): Promise<void> {
@@ -382,13 +345,13 @@ export class ReportService {
         if (preference.deliveryMethod === DeliveryMethod.LOCAL_FILE) {
           await this.generateAndSaveReport(preference.reportType, preference.userId);
           console.log(`Generated ${preference.reportType} report for user ${preference.userId}`);
-          // await this.createReportNotification(preference, preference.reportType, 'saved');
+          await this.createReportNotification(preference, preference.reportType, 'saved');
         } else if (preference.deliveryMethod === DeliveryMethod.EMAIL) {
           const reportBuffer = await this.generateReportBuffer(preference.reportType, preference.userId);
           const user = await this.getUserById(preference.userId);
           await this.sendReportEmail(user.email || user.username, preference.reportType, reportBuffer, preference.userId);
           console.log(`Sent ${preference.reportType} report via email to user ${preference.userId}`);
-          // await this.createReportNotification(preference, preference.reportType, 'sent');
+          await this.createReportNotification(preference, preference.reportType, 'sent');
         }
       } catch (error) {
         console.error(`Failed to generate report for user ${preference.userId}:`, error);
@@ -440,13 +403,13 @@ export class ReportService {
         if (preference.deliveryMethod === DeliveryMethod.LOCAL_FILE) {
           await this.generateAndSaveReport(reportType, preference.userId);
           console.log(`Generated ${reportType} report for user ${preference.userId}`);
-          // await this.createReportNotification(preference, reportType, 'saved');
+          await this.createReportNotification(preference, reportType, 'saved');
         } else if (preference.deliveryMethod === DeliveryMethod.EMAIL) {
           const reportBuffer = await this.generateReportBuffer(reportType, preference.userId);
           const user = await this.getUserById(preference.userId);
           await this.sendReportEmail(user.email, reportType, reportBuffer, preference.userId);
           console.log(`Sent ${reportType} report via email to user ${preference.userId}`);
-          // await this.createReportNotification(preference, reportType, 'sent');
+          await this.createReportNotification(preference, reportType, 'sent');
         }
       } catch (error) {
         console.error(`Failed to generate ${reportType} report for user ${preference.userId}:`, error);

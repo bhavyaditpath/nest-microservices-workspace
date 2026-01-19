@@ -1,7 +1,9 @@
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsNumber, IsNotEmpty } from 'class-validator';
 import { ReportType, DeliveryMethod } from 'shared';
 
 export class CreateReportPreferenceRequestDto {
+  @IsNumber()
+  @IsNotEmpty()
   userId: number;
 
   @IsEnum(ReportType)
