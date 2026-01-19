@@ -42,45 +42,61 @@ export class ReportService {
 
   async getWeeklyReport(userId: number) {
     const now = new Date();
+
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+    startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
-    return this.generateReport(startOfWeek, now, userId);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return this.generateReport(startOfWeek, endOfWeek, userId);
   }
 
   async getMonthlyReport(userId: number) {
     const now = new Date();
+
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    return this.generateReport(startOfMonth, now, userId);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    return this.generateReport(startOfMonth, endOfMonth, userId);
   }
 
   async getHalfYearlyReport(userId: number) {
     const now = new Date();
-    let startOfHalfYear = new Date(now);
+    const month = now.getMonth();
 
-    // Calculate start of current half-year period
-    const currentMonth = now.getMonth();
-    if (currentMonth >= 6) {
-      // Second half: July 1st
-      startOfHalfYear = new Date(now.getFullYear(), 6, 1);
-    } else {
-      // First half: January 1st
-      startOfHalfYear = new Date(now.getFullYear(), 0, 1);
-    }
+    const startOfHalfYear =
+      month >= 6
+        ? new Date(now.getFullYear(), 6, 1)
+        : new Date(now.getFullYear(), 0, 1);
+
     startOfHalfYear.setHours(0, 0, 0, 0);
 
-    return this.generateReport(startOfHalfYear, now, userId);
+    const endOfHalfYear =
+      month >= 6
+        ? new Date(now.getFullYear(), 11, 31)
+        : new Date(now.getFullYear(), 5, 30);
+
+    endOfHalfYear.setHours(23, 59, 59, 999);
+
+    return this.generateReport(startOfHalfYear, endOfHalfYear, userId);
   }
 
   async getYearlyReport(userId: number) {
     const now = new Date();
+
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     startOfYear.setHours(0, 0, 0, 0);
 
-    return this.generateReport(startOfYear, now, userId);
+    const endOfYear = new Date(now.getFullYear(), 11, 31);
+    endOfYear.setHours(23, 59, 59, 999);
+
+    return this.generateReport(startOfYear, endOfYear, userId);
   }
 
   private async generateReport(startDate: Date, endDate: Date, userId: number) {
