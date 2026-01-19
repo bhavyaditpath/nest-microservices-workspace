@@ -1,1 +1,0 @@
-{"version":3,"file":"template-loader.js","sourceRoot":"","sources":["template-loader.ts"],"names":[],"mappings":";;AACA,wCAWC;AAXD,SAAgB,cAAc,CAAC,YAAoB,EAAE,IAAS;IAE5D,IAAI,YAAY,KAAK,cAAc,EAAE,CAAC;QACpC,OAAO;YACC,IAAI,CAAC,iBAAiB;wBACV,IAAI,CAAC,iBAAiB;2BACnB,IAAI,CAAC,aAAa;iBAC5B,IAAI,CAAC,WAAW;KAC5B,CAAC;IACJ,CAAC;IACD,OAAO,EAAE,CAAC;AACZ,CAAC"}

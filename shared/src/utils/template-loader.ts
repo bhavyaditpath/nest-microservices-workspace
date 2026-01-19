@@ -1,13 +1,13 @@
-// Simple template renderer
+import * as fs from "fs";
+import * as handlebars from "handlebars";
+import * as path from "path";
+
 export function renderTemplate(templateName: string, data: any): string {
-  // For simplicity, return a basic HTML
-  if (templateName === 'report-email') {
-    return `
-      <h1>${data.reportTypeDisplay} Report</h1>
-      <p>Report Type: ${data.reportTypeDisplay}</p>
-      <p>Generated Date: ${data.generatedDate}</p>
-      <p>User: ${data.userDisplay}</p>
-    `;
-  }
-  return '';
+  const filePath = path.join(process.cwd(), "src", "templates", `${templateName}.hbs`);
+
+  const templateSource = fs.readFileSync(filePath, "utf8");
+
+  const template = handlebars.compile(templateSource);
+
+  return template(data);
 }
