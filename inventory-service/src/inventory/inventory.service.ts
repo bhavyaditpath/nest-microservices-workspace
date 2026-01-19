@@ -34,7 +34,7 @@ export class InventoryService {
     sortBy?: string,
     sortOrder: 'ASC' | 'DESC' = 'ASC',
   ) {
-    const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}`;
+    const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}&Is3Days=false`;
     const response = await firstValueFrom(this.httpService.get(url));
     const rows: PurchaseData[] = response.data.data ?? [];
 
@@ -141,7 +141,7 @@ export class InventoryService {
   async getStockSummary(user: User, search?: string) {
     let rows: PurchaseData[];
     try {
-      const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}`;
+      const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}&Is3Days=false`;
       const response = await firstValueFrom(this.httpService.get(url));
       rows = response.data.data;
     } catch (error) {

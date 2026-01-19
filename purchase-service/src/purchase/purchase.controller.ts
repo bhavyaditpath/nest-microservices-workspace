@@ -44,10 +44,12 @@ export class PurchaseController {
     async findAll(
         @Query('userId') userId?: string,
         @Query('productName') productName?: string,
+        @Query('Is3Days') Is3Days?: string,
     ) {
         const data = await this.purchaseService.findAll(
             userId ? parseInt(userId) : undefined,
             productName,
+            Is3Days,
         );
         return ApiResponseUtil.success(data, 'Purchases retrieved successfully');
     }

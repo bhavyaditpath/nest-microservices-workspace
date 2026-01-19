@@ -49,14 +49,14 @@ export class PurchaseService {
     return savedPurchase;
   }
 
-  async findAll(userId?: number, productName?: string) {
+  async findAll(userId?: number, productName?: string, Is3Days?: string) {
     const query = this.purchaseRepository
       .createQueryBuilder('purchase')
       .where('purchase.isRemoved = :isRemoved', { isRemoved: false });
 
-    // if (!productName) {
-    //     query.andWhere("purchase.createdAt >= NOW() - INTERVAL '3 days'");
-    // }
+    if (Is3Days !== 'false') {
+        query.andWhere("purchase.createdAt >= NOW() - INTERVAL '3 days'");
+    }
 
     if (userId) {
       query.andWhere('purchase.userId = :userId', { userId });

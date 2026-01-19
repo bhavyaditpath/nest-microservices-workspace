@@ -42,7 +42,7 @@ export class PurchaseController {
     const response = await firstValueFrom(
       this.httpService.get(url)
     );
-    return response.data;
+    return response.data.data;
   }
 
   @UseGuards(JwtAuthGuard)
