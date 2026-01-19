@@ -39,6 +39,7 @@ export class InventoryService {
     const rows: PurchaseData[] = response.data.data ?? [];
 
     const filteredRows = rows.filter(r => {
+      if (r.createdBy !== user.id) return false;
       if (user.role === UserRole.ADMIN) return true;
 
       return !r.request || r.request.status === RequestStatus.DELIVERED;
@@ -148,8 +149,10 @@ export class InventoryService {
     }
 
     // Apply role-based filtering
-    if (user.role === UserRole.ADMIN) {
-      rows = rows.filter(r => !r.request || r.request.status === RequestStatus.DELIVERED);
+     if (user.role === UserRole.ADMIN) {
+      rows = rows.filter(r => r.createdBy === user.id);
+    } else {
+      rows = rows.filter(r => r.createdBy === user.id && (!r.request || r.request.status === RequestStatus.DELIVERED));
     }
 
     if (search) {
