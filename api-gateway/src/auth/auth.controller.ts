@@ -59,10 +59,9 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getProfile(@Req() req: any) {
-    const userId = req.user.id;
     const response = await firstValueFrom(
       this.httpService.get('http://localhost:3001/auth/me', {
-        headers: { 'user-id': userId.toString() }
+        headers: { 'Authorization': req.headers.authorization }
       })
     );
     return response.data;
