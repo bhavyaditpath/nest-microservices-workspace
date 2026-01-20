@@ -360,13 +360,11 @@ export class ReportService {
       try {
         if (preference.deliveryMethod === DeliveryMethod.LOCAL_FILE) {
           await this.generateAndSaveReport(preference.reportType, preference.userId);
-          console.log(`Generated ${preference.reportType} report for user ${preference.userId}`);
           await this.createReportNotification(preference, preference.reportType, 'saved');
         } else if (preference.deliveryMethod === DeliveryMethod.EMAIL) {
           const reportBuffer = await this.generateReportBuffer(preference.reportType, preference.userId);
           const user = await this.getUserById(preference.userId);
           await this.sendReportEmail(user.email || user.username, preference.reportType, reportBuffer, preference.userId);
-          console.log(`Sent ${preference.reportType} report via email to user ${preference.userId}`);
           await this.createReportNotification(preference, preference.reportType, 'sent');
         }
       } catch (error) {
@@ -377,31 +375,26 @@ export class ReportService {
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleDailyReports() {
-    console.log('Generating daily reports...');
     await this.processReportsByType(ReportType.DAILY);
   }
 
   @Cron(CronExpression.EVERY_WEEK)
   async handleWeeklyReports() {
-    console.log('Generating weekly reports...');
     await this.processReportsByType(ReportType.WEEKLY);
   }
 
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
   async handleMonthlyReports() {
-    console.log('Generating monthly reports...');
     await this.processReportsByType(ReportType.MONTHLY);
   }
 
   @Cron('0 0 1 */6 *') // Every 6 months on the 1st day at midnight
   async handleHalfYearlyReports() {
-    console.log('Generating half-yearly reports...');
     await this.processReportsByType(ReportType.HALF_YEARLY);
   }
 
   @Cron(CronExpression.EVERY_YEAR)
   async handleYearlyReports() {
-    console.log('Generating yearly reports...');
     await this.processReportsByType(ReportType.YEARLY);
   }
 
@@ -418,13 +411,11 @@ export class ReportService {
       try {
         if (preference.deliveryMethod === DeliveryMethod.LOCAL_FILE) {
           await this.generateAndSaveReport(reportType, preference.userId);
-          console.log(`Generated ${reportType} report for user ${preference.userId}`);
           await this.createReportNotification(preference, reportType, 'saved');
         } else if (preference.deliveryMethod === DeliveryMethod.EMAIL) {
           const reportBuffer = await this.generateReportBuffer(reportType, preference.userId);
           const user = await this.getUserById(preference.userId);
           await this.sendReportEmail(user.email, reportType, reportBuffer, preference.userId);
-          console.log(`Sent ${reportType} report via email to user ${preference.userId}`);
           await this.createReportNotification(preference, reportType, 'sent');
         }
       } catch (error) {

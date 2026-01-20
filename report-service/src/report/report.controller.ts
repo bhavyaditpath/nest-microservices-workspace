@@ -58,7 +58,6 @@ export class ReportController {
 
   @Get('preferences')
   async getUserPreferences(@Query('userId', ParseIntPipe) userId: number) {
-    console.log('Fetching preferences for userId:', userId);
     const data = await this.reportService.findUserPreferences(userId);
     return data;
   }

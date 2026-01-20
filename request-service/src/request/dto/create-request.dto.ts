@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateRequestDto {
@@ -8,6 +8,7 @@ export class CreateRequestDto {
 
   @Transform(({ value }) => parseInt(value))
   @IsNumber()
+  @IsNotEmpty()
   purchaseId: number;
 
   @Transform(({ value }) => parseFloat(value))

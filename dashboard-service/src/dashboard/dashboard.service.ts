@@ -29,11 +29,9 @@ export class DashboardService {
   }
 
   async getActiveBranches(): Promise<number> {
-    console.log('Service: Fetching active branches');
     const response = await firstValueFrom(
       this.httpService.get(`${this.branchServiceUrl}/branches`)
     );
-    console.log('Service: Active branches response', response.data);
     return response.data.data.filter((branch: any) => !branch.isRemoved).length;
   }
 
@@ -41,13 +39,11 @@ export class DashboardService {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    console.log('Service: Monthly sales startOfMonth', startOfMonth);
     const response = await firstValueFrom(
       this.httpService.get(`${this.requestServiceUrl}/request`, {
         params: { branchId: user.branchId },
       })
     );
-    console.log('Service: Monthly sales response', response);
     const requests = response.data.data.filter((req: any) =>
       req.status === RequestStatus.DELIVERED &&
       !req.isRemoved &&

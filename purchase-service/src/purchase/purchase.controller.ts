@@ -27,7 +27,6 @@ export class PurchaseController {
 
     @Get('report-summary')
     async getReportSummary(@Query() dto: GetReportSummaryDto) {
-        console.log('DTO RECEIVED:', dto);
         const data = await this.purchaseService.getReportSummary(
             dto.startDate,
             dto.endDate,
