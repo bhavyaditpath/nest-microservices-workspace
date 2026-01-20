@@ -6,17 +6,18 @@ import { BranchAccessGuard } from '../common/guards/branch-access.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole } from '../common/enums/role.enum';
+import { User } from 'shared';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(private readonly dashboardService: DashboardService) { }
 
   // Admin Dashboard APIs
-  @Get('admin/:userId/total-inventory')
+  @Get('admin/total-inventory')
   @Roles(UserRole.ADMIN)
-  async getTotalInventory(@Param('userId', ParseIntPipe) userId: number): Promise<{ count: number }> {
-    const count = await this.dashboardService.getTotalInventory(userId);
+  async getTotalInventory(@CurrentUser() user: User): Promise<{ count: number }> {
+    const count = await this.dashboardService.getTotalInventory(user);
     return { count };
   }
 
@@ -27,17 +28,17 @@ export class DashboardController {
     return { count };
   }
 
-  @Get('admin/:userId/monthly-sales')
+  @Get('admin/monthly-sales')
   @Roles(UserRole.ADMIN)
-  async getMonthlySales(@Param('userId', ParseIntPipe) userId: number): Promise<{ count: number }> {
-    const count = await this.dashboardService.getMonthlySales(userId);
+  async getMonthlySales(@CurrentUser() user: User): Promise<{ count: number }> {
+    const count = await this.dashboardService.getMonthlySales(user);
     return { count };
   }
 
-  @Get('admin/:userId/pending-requests')
+  @Get('admin/pending-requests')
   @Roles(UserRole.ADMIN)
-  async getPendingRequests(@Param('userId', ParseIntPipe) userId: number): Promise<{ count: number }> {
-    const count = await this.dashboardService.getPendingRequests(userId);
+  async getPendingRequests(@CurrentUser() user: User): Promise<{ count: number }> {
+    const count = await this.dashboardService.getPendingRequests(user);
     return { count };
   }
 
@@ -50,7 +51,7 @@ export class DashboardController {
   @Get('branch/:userId/current-stock')
   @Roles(UserRole.BRANCH)
   @UseGuards(BranchAccessGuard)
-  async getCurrentStock(@Param('userId', ParseIntPipe) userId: number): Promise<{ count: number }> {
+  async getCurrentStock(@Param('userId', ParseIntPipe) userId: number, @CurrentUser() user: User): Promise<{ count: number }> {
     const count = await this.dashboardService.getCurrentStock(userId);
     return { count };
   }
@@ -58,22 +59,22 @@ export class DashboardController {
   @Get('branch/:userId/active-alerts')
   @Roles(UserRole.BRANCH)
   @UseGuards(BranchAccessGuard)
-  async getActiveAlerts(@Param('userId', ParseIntPipe) userId: number): Promise<{ count: number }> {
+  async getActiveAlerts(@Param('userId', ParseIntPipe) userId: number, @CurrentUser() user: User): Promise<{ count: number }> {
     const count = await this.dashboardService.getActiveAlerts(userId);
     return { count };
   }
 
-  @Get('branch/:userId/pending-orders')
+  @Get('branch/pending-orders')
   @Roles(UserRole.BRANCH)
-  async getPendingOrders(@Param('userId', ParseIntPipe) userId: number): Promise<{ count: number }> {
-    const count = await this.dashboardService.getPendingOrders(userId);
+  async getPendingOrders(@CurrentUser() user: User): Promise<{ count: number }> {
+    const count = await this.dashboardService.getPendingOrders(user);
     return { count };
   }
 
-  @Get('branch/:userId/todays-buys')
+  @Get('branch/todays-buys')
   @Roles(UserRole.BRANCH)
-  async getTodaysbuys(@Param('userId', ParseIntPipe) userId: number): Promise<{ count: number }> {
-    const count = await this.dashboardService.getTodaysbuys(userId);
+  async getTodaysbuys(@CurrentUser() user: User): Promise<{ count: number }> {
+    const count = await this.dashboardService.getTodaysbuys(user);
     return { count };
   }
 }

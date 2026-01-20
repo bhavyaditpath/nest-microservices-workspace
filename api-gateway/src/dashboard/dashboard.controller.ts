@@ -14,11 +14,11 @@ export class DashboardController {
 
   // Admin Dashboard APIs
   @UseGuards(JwtAuthGuard)
-  @Get('admin/:userId/total-inventory')
-  async getTotalInventory(@Req() req: Request, @Param('userId', ParseIntPipe) userId: number) {
+  @Get('admin/total-inventory')
+  async getTotalInventory(@Req() req: Request) {
     const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/admin/${userId}/total-inventory`, { headers })
+      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/admin/total-inventory`, { headers })
     );
     return response.data;
   }
@@ -34,21 +34,21 @@ export class DashboardController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('admin/:userId/monthly-sales')
-  async getMonthlySales(@Req() req: Request, @Param('userId', ParseIntPipe) userId: number) {
+  @Get('admin/monthly-sales')
+  async getMonthlySales(@Req() req: Request) {
     const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/admin/${userId}/monthly-sales`, { headers })
+      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/admin/monthly-sales`, { headers })
     );
     return response.data;
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('admin/:userId/pending-requests')
-  async getPendingRequests(@Req() req: Request, @Param('userId', ParseIntPipe) userId: number) {
+  @Get('admin/pending-requests')
+  async getPendingRequests(@Req() req: Request) {
     const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/admin/${userId}/pending-requests`, { headers })
+      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/admin/pending-requests`, { headers })
     );
     return response.data;
   }
@@ -85,21 +85,21 @@ export class DashboardController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('branch/:userId/pending-orders')
-  async getPendingOrders(@Req() req: Request, @Param('userId', ParseIntPipe) userId: number) {
+  @Get('branch/pending-orders')
+  async getPendingOrders(@Req() req: Request) {
     const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/branch/${userId}/pending-orders`, { headers })
+      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/branch/pending-orders`, { headers })
     );
     return response.data;
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('branch/:userId/todays-buys')
-  async getTodaysbuys(@Req() req: Request, @Param('userId', ParseIntPipe) userId: number) {
+  @Get('branch/todays-buys')
+  async getTodaysbuys(@Req() req: Request) {
     const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/branch/${userId}/todays-buys`, { headers })
+      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/branch/todays-buys`, { headers })
     );
     return response.data;
   }

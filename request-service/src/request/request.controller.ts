@@ -26,8 +26,8 @@ export class RequestController {
   }
 
   @Get()
-  findAll(@Request() req, @Query() query: PaginationQueryDto) {
-    return this.requestService.findAll(req.user as User, query);
+  findAll(@Request() req, @Query() query: PaginationQueryDto, @Query('branchId') branchId?: string) {
+    return this.requestService.findAll(req.user as User, query, branchId ? parseInt(branchId) : undefined);
   }
 
   @Get(':id')

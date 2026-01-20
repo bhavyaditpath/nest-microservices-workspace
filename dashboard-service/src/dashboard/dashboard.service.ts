@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RequestStatus } from 'shared';
+import { RequestStatus, User } from 'shared';
 
 @Injectable()
 export class DashboardService {
@@ -18,13 +18,14 @@ export class DashboardService {
   }
 
   // Admin Dashboard APIs
-  async getTotalInventory(userId: number): Promise<number> {
+  async getTotalInventory(user: User): Promise<number> {
     const response = await firstValueFrom(
       this.httpService.get(`${this.purchaseServiceUrl}/purchases`, {
-        params: { userId },
+        params: { branchId: user.branchId },
       })
     );
-    return response.data.data.length;
+    const purchases = response.data.data.filter((p: any) => !p.isRemoved);
+    return purchases.length;
   }
 
   async getActiveBranches(): Promise<number> {
@@ -36,16 +37,17 @@ export class DashboardService {
     return response.data.data.filter((branch: any) => !branch.isRemoved).length;
   }
 
-  async getMonthlySales(userId: number): Promise<number> {
+  async getMonthlySales(user: User): Promise<number> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-
+    console.log('Service: Monthly sales startOfMonth', startOfMonth);
     const response = await firstValueFrom(
       this.httpService.get(`${this.requestServiceUrl}/request`, {
-        params: { adminUserId: userId },
+        params: { branchId: user.branchId },
       })
     );
+    console.log('Service: Monthly sales response', response);
     const requests = response.data.data.filter((req: any) =>
       req.status === RequestStatus.DELIVERED &&
       !req.isRemoved &&
@@ -65,10 +67,10 @@ export class DashboardService {
     return total;
   }
 
-  async getPendingRequests(userId: number): Promise<number> {
+  async getPendingRequests(user: User): Promise<number> {
     const response = await firstValueFrom(
       this.httpService.get(`${this.requestServiceUrl}/request`, {
-        params: { adminUserId: userId },
+        params: { branchId: user.branchId },
       })
     );
     return response.data.data.filter((req: any) =>
@@ -144,32 +146,33 @@ export class DashboardService {
     return []; // Placeholder
   }
 
-  async getPendingOrders(userId: number): Promise<number> {
+  async getPendingOrders(user: User): Promise<number> {
     const response = await firstValueFrom(
       this.httpService.get(`${this.requestServiceUrl}/request`, {
-        params: { requestingUserId: userId },
+        params: { branchId: user.branchId },
       })
     );
     return response.data.data.filter((req: any) =>
-      req.status === RequestStatus.REQUEST && !req.isRemoved
+      req.status === RequestStatus.REQUEST && !req.isRemoved && req.requestingUserId === user.id
     ).length;
   }
 
-  async getTodaysbuys(userId: number): Promise<number> {
+  async getTodaysbuys(user: User): Promise<number> {
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
     const response = await firstValueFrom(
       this.httpService.get(`${this.requestServiceUrl}/request`, {
-        params: { requestingUserId: userId },
+        params: { branchId: user.branchId },
       })
     );
     const requests = response.data.data.filter((req: any) =>
       req.status === RequestStatus.DELIVERED &&
       !req.isRemoved &&
       new Date(req.createdAt) >= startOfDay &&
-      new Date(req.createdAt) <= endOfDay
+      new Date(req.createdAt) <= endOfDay &&
+      req.requestingUserId === user.id
     );
 
     let total = 0;

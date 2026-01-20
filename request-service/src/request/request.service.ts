@@ -55,7 +55,7 @@ export class RequestService {
     return ApiResponseUtil.success(saved, 'Request created successfully');
   }
 
-  async findAll(user: User, params?: any) {
+  async findAll(user: User, params?: any, branchId?: number) {
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 10;
 
@@ -63,10 +63,21 @@ export class RequestService {
       .createQueryBuilder('request')
       .where('request.isRemoved = :removed', { removed: false });
 
-    if (user.role === UserRole.ADMIN) {
-      query.andWhere('request.adminUserId = :id', { id: user.id });
-    } else if (user.role === UserRole.BRANCH) {
-      query.andWhere('request.requestingUserId = :id', { id: user.id });
+    if (branchId) {
+      // For branch-wise, get user ids for the branch
+      const userResponse = await firstValueFrom(
+        this.httpService.get(`${this.userServiceUrl}/users?branchId=${branchId}`)
+      );
+      const users = userResponse.data.data || [];
+      const userIds = users.map((u: any) => u.id);
+
+      query.andWhere('(request.requestingUserId IN (:...userIds) OR request.adminUserId IN (:...userIds))', { userIds });
+    } else {
+      if (user.role === UserRole.ADMIN) {
+        query.andWhere('request.adminUserId = :id', { id: user.id });
+      } else if (user.role === UserRole.BRANCH) {
+        query.andWhere('request.requestingUserId = :id', { id: user.id });
+      }
     }
 
     // Search functionality
