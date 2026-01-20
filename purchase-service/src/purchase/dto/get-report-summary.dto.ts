@@ -1,4 +1,4 @@
-import { IsISO8601, IsInt } from 'class-validator';
+import { IsISO8601, IsInt, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GetReportSummaryDto {
@@ -10,5 +10,11 @@ export class GetReportSummaryDto {
 
   @Type(() => Number)
   @IsInt()
-  userId: number;
+  @IsOptional()
+  userId?: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  branchId?: number;
 }

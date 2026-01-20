@@ -32,6 +32,7 @@ export class PurchaseController {
             dto.startDate,
             dto.endDate,
             dto.userId,
+            dto.branchId,
         );
 
         return ApiResponseUtil.success(
@@ -43,11 +44,13 @@ export class PurchaseController {
     @Get()
     async findAll(
         @Query('userId') userId?: string,
+        @Query('branchId') branchId?: string,
         @Query('productName') productName?: string,
         @Query('Is3Days') Is3Days?: string,
     ) {
         const data = await this.purchaseService.findAll(
             userId ? parseInt(userId) : undefined,
+            branchId ? parseInt(branchId) : undefined,
             productName,
             Is3Days,
         );

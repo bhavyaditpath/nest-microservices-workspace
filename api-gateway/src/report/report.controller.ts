@@ -17,7 +17,7 @@ export class ReportController {
   async getDailyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      params.append('userId', user.userId.toString());
+      params.append('branchId', user.branchId.toString());
       const url = `${this.reportServiceUrl}/reports/daily?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
@@ -34,7 +34,7 @@ export class ReportController {
   async getWeeklyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      params.append('userId', user.userId.toString());
+      params.append('branchId', user.branchId.toString());
       const url = `${this.reportServiceUrl}/reports/weekly?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
@@ -51,7 +51,7 @@ export class ReportController {
   async getMonthlyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      params.append('userId', user.userId.toString());
+      params.append('branchId', user.branchId.toString());
       const url = `${this.reportServiceUrl}/reports/monthly?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
@@ -68,7 +68,7 @@ export class ReportController {
   async getHalfYearlyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      params.append('userId', user.userId.toString());
+      params.append('branchId', user.branchId.toString());
       const url = `${this.reportServiceUrl}/reports/half-yearly?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
@@ -85,7 +85,7 @@ export class ReportController {
   async getYearlyReport(@CurrentUser() user: any) {
     try {
       const params = new URLSearchParams();
-      params.append('userId', user.userId.toString());
+      params.append('branchId', user.branchId.toString());
       const url = `${this.reportServiceUrl}/reports/yearly?${params.toString()}`;
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;

@@ -30,17 +30,17 @@ export class ReportService {
     this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
   }
 
-  async getDailyReport(userId: number) {
+  async getDailyReport(branchId: number) {
     const now = new Date();
     const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0); // Set to midnight today
 
     const endOfDay = new Date(now);
     endOfDay.setHours(23, 59, 59, 999); // Set to end of today
-    return this.generateReport(startOfDay, endOfDay, userId);
+    return this.generateReport(startOfDay, endOfDay, branchId);
   }
 
-  async getWeeklyReport(userId: number) {
+  async getWeeklyReport(branchId: number) {
     const now = new Date();
 
     const startOfWeek = new Date(now);
@@ -51,10 +51,10 @@ export class ReportService {
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
 
-    return this.generateReport(startOfWeek, endOfWeek, userId);
+    return this.generateReport(startOfWeek, endOfWeek, branchId);
   }
 
-  async getMonthlyReport(userId: number) {
+  async getMonthlyReport(branchId: number) {
     const now = new Date();
 
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -63,10 +63,10 @@ export class ReportService {
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     endOfMonth.setHours(23, 59, 59, 999);
 
-    return this.generateReport(startOfMonth, endOfMonth, userId);
+    return this.generateReport(startOfMonth, endOfMonth, branchId);
   }
 
-  async getHalfYearlyReport(userId: number) {
+  async getHalfYearlyReport(branchId: number) {
     const now = new Date();
     const month = now.getMonth();
 
@@ -84,10 +84,10 @@ export class ReportService {
 
     endOfHalfYear.setHours(23, 59, 59, 999);
 
-    return this.generateReport(startOfHalfYear, endOfHalfYear, userId);
+    return this.generateReport(startOfHalfYear, endOfHalfYear, branchId);
   }
 
-  async getYearlyReport(userId: number) {
+  async getYearlyReport(branchId: number) {
     const now = new Date();
 
     const startOfYear = new Date(now.getFullYear(), 0, 1);
@@ -96,12 +96,12 @@ export class ReportService {
     const endOfYear = new Date(now.getFullYear(), 11, 31);
     endOfYear.setHours(23, 59, 59, 999);
 
-    return this.generateReport(startOfYear, endOfYear, userId);
+    return this.generateReport(startOfYear, endOfYear, branchId);
   }
 
-  private async generateReport(startDate: Date, endDate: Date, userId: number) {
+  private async generateReport(startDate: Date, endDate: Date, branchId: number) {
     try {
-      const url = `${this.purchaseServiceUrl}/purchases/report-summary?userId=${userId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+      const url = `${this.purchaseServiceUrl}/purchases/report-summary?branchId=${branchId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
 
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data.data;

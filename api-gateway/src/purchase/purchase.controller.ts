@@ -34,9 +34,9 @@ export class PurchaseController {
   @UseGuards(JwtAuthGuard)
   @Get()
   async findAll(@Request() req) {
-    const userId = req.user.userId;
+    const branchId = req.user.branchId;
     const params = new URLSearchParams();
-    if (userId) params.append('userId', userId.toString());
+    if (branchId) params.append('branchId', branchId.toString());
 
     const url = `${this.purchaseServiceUrl}/purchases${params.toString() ? '?' + params.toString() : ''}`;
     const response = await firstValueFrom(

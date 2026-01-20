@@ -34,12 +34,11 @@ export class InventoryService {
     sortBy?: string,
     sortOrder: 'ASC' | 'DESC' = 'ASC',
   ) {
-    const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}&Is3Days=false`;
+    const url = `${this.purchaseServiceUrl}/purchases?branchId=${user.branchId}&Is3Days=false`;
     const response = await firstValueFrom(this.httpService.get(url));
     const rows: PurchaseData[] = response.data.data ?? [];
 
     const filteredRows = rows.filter(r => {
-      if (r.createdBy !== user.id) return false;
       if (user.role === UserRole.ADMIN) return true;
 
       return !r.request || r.request.status === RequestStatus.DELIVERED;
@@ -140,7 +139,7 @@ export class InventoryService {
   async getStockSummary(user: User, search?: string) {
     let rows: PurchaseData[];
     try {
-      const url = `${this.purchaseServiceUrl}/purchases?userId=${user.id}&Is3Days=false`;
+      const url = `${this.purchaseServiceUrl}/purchases?branchId=${user.branchId}&Is3Days=false`;
       const response = await firstValueFrom(this.httpService.get(url));
       rows = response.data.data;
     } catch (error) {
@@ -149,11 +148,9 @@ export class InventoryService {
     }
 
     // Apply role-based filtering
-     if (user.role === UserRole.ADMIN) {
-      rows = rows.filter(r => r.createdBy === user.id);
-    } else {
-      rows = rows.filter(r => r.createdBy === user.id && (!r.request || r.request.status === RequestStatus.DELIVERED));
-    }
+     if (user.role !== UserRole.ADMIN) {
+       rows = rows.filter(r => !r.request || r.request.status === RequestStatus.DELIVERED);
+     }
 
     if (search) {
       rows = rows.filter(r =>

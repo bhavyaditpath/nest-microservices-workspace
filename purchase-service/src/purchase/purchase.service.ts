@@ -49,7 +49,7 @@ export class PurchaseService {
     return savedPurchase;
   }
 
-  async findAll(userId?: number, productName?: string, Is3Days?: string) {
+  async findAll(userId?: number, branchId?: number, productName?: string, Is3Days?: string) {
     const query = this.purchaseRepository
       .createQueryBuilder('purchase')
       .where('purchase.isRemoved = :isRemoved', { isRemoved: false });
@@ -60,6 +60,10 @@ export class PurchaseService {
 
     if (userId) {
       query.andWhere('purchase.userId = :userId', { userId });
+    }
+
+    if (branchId) {
+      query.andWhere('purchase.branchId = :branchId', { branchId });
     }
 
     if (productName) {
@@ -129,7 +133,7 @@ export class PurchaseService {
     return this.purchaseRepository.save(purchase);
   }
 
-  async getReportSummary(startDate: string, endDate: string, userId: number) {
+  async getReportSummary(startDate: string, endDate: string, userId?: number, branchId?: number) {
     const query = this.purchaseRepository
       .createQueryBuilder('purchase')
       // .leftJoin('purchase.user', 'user')
@@ -143,8 +147,15 @@ export class PurchaseService {
         startDate,
         endDate,
       })
-      .andWhere('purchase.isRemoved = :isRemoved', { isRemoved: false })
-      .andWhere('purchase.userId = :userId', { userId });
+      .andWhere('purchase.isRemoved = :isRemoved', { isRemoved: false });
+
+    if (userId) {
+      query.andWhere('purchase.userId = :userId', { userId });
+    }
+
+    if (branchId) {
+      query.andWhere('purchase.branchId = :branchId', { branchId });
+    }
 
     const result = await query.getRawOne();
 

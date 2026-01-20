@@ -20,32 +20,32 @@ export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
   @Get('daily')
-  async getDailyReport(@Query('userId', ParseIntPipe) userId: number) {
-    const data = await this.reportService.getDailyReport(userId);
+  async getDailyReport(@Query('branchId', ParseIntPipe) branchId: number) {
+    const data = await this.reportService.getDailyReport(branchId);
     return data;
   }
 
   @Get('weekly')
-  async getWeeklyReport(@Query('userId', ParseIntPipe) userId: number) {
-    const data = await this.reportService.getWeeklyReport(userId);
+  async getWeeklyReport(@Query('branchId', ParseIntPipe) branchId: number) {
+    const data = await this.reportService.getWeeklyReport(branchId);
     return data;
   }
 
   @Get('monthly')
-  async getMonthlyReport(@Query('userId', ParseIntPipe) userId: number) {
-    const data = await this.reportService.getMonthlyReport(userId);
+  async getMonthlyReport(@Query('branchId', ParseIntPipe) branchId: number) {
+    const data = await this.reportService.getMonthlyReport(branchId);
     return data;
   }
 
   @Get('half-yearly')
-  async getHalfYearlyReport(@Query('userId', ParseIntPipe) userId: number) {
-    const data = await this.reportService.getHalfYearlyReport(userId);
+  async getHalfYearlyReport(@Query('branchId', ParseIntPipe) branchId: number) {
+    const data = await this.reportService.getHalfYearlyReport(branchId);
     return data;
   }
 
   @Get('yearly')
-  async getYearlyReport(@Query('userId', ParseIntPipe) userId: number) {
-    const data = await this.reportService.getYearlyReport(userId);
+  async getYearlyReport(@Query('branchId', ParseIntPipe) branchId: number) {
+    const data = await this.reportService.getYearlyReport(branchId);
     return data;
   }
 
