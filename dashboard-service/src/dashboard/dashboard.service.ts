@@ -5,16 +5,22 @@ import { RequestStatus } from 'shared';
 
 @Injectable()
 export class DashboardService {
-  private readonly apiGatewayUrl: string;
+  private readonly userServiceUrl: string;
+  private readonly branchServiceUrl: string;
+  private readonly purchaseServiceUrl: string;
+  private readonly requestServiceUrl: string;
 
   constructor(private httpService: HttpService) {
-    this.apiGatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:3000';
+    this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3004';
+    this.branchServiceUrl = process.env.BRANCH_SERVICE_URL || 'http://localhost:3003';
+    this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
+    this.requestServiceUrl = process.env.REQUEST_SERVICE_URL || 'http://localhost:3008';
   }
 
   // Admin Dashboard APIs
   async getTotalInventory(userId: number): Promise<number> {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/purchase`, {
+      this.httpService.get(`${this.purchaseServiceUrl}/purchases`, {
         params: { userId },
       })
     );
@@ -22,9 +28,11 @@ export class DashboardService {
   }
 
   async getActiveBranches(): Promise<number> {
+    console.log('Service: Fetching active branches');
     const response = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/branch`)
+      this.httpService.get(`${this.branchServiceUrl}/branches`)
     );
+    console.log('Service: Active branches response', response.data);
     return response.data.data.filter((branch: any) => !branch.isRemoved).length;
   }
 
@@ -34,7 +42,7 @@ export class DashboardService {
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
     const response = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/request`, {
+      this.httpService.get(`${this.requestServiceUrl}/request`, {
         params: { adminUserId: userId },
       })
     );
@@ -49,7 +57,7 @@ export class DashboardService {
     for (const req of requests) {
       // Need to get purchase price
       const purchaseResponse = await firstValueFrom(
-        this.httpService.get(`${this.apiGatewayUrl}/purchase/${req.purchaseId}`)
+        this.httpService.get(`${this.purchaseServiceUrl}/purchases/${req.purchaseId}`)
       );
       const purchase = purchaseResponse.data;
       total += req.quantityRequested * purchase.pricePerUnit;
@@ -59,7 +67,7 @@ export class DashboardService {
 
   async getPendingRequests(userId: number): Promise<number> {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/request`, {
+      this.httpService.get(`${this.requestServiceUrl}/request`, {
         params: { adminUserId: userId },
       })
     );
@@ -72,13 +80,13 @@ export class DashboardService {
   async getCurrentStock(userId: number): Promise<number> {
     // First get user to get branchId
     const userResponse = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/user/${userId}`)
+      this.httpService.get(`${this.userServiceUrl}/users/${userId}`)
     );
     const user = userResponse.data;
     if (!user || !user.branchId) return 0;
 
     const response = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/purchase`, {
+      this.httpService.get(`${this.purchaseServiceUrl}/purchases`, {
         params: { branchId: user.branchId },
       })
     );
@@ -89,7 +97,7 @@ export class DashboardService {
   async getActiveAlerts(userId: number): Promise<number> {
     // First get user to get branchId
     const userResponse = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/users/${userId}`)
+      this.httpService.get(`${this.userServiceUrl}/users/${userId}`)
     );
     const user = userResponse.data;
     if (!user || !user.branchId) return 0;
@@ -109,7 +117,7 @@ export class DashboardService {
   async getActiveAlertsList(userId: number): Promise<any[]> {
     // First get user to get branchId
     const userResponse = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/user/${userId}`)
+      this.httpService.get(`${this.userServiceUrl}/users/${userId}`)
     );
     const user = userResponse.data;
     if (!user || !user.branchId) return [];
@@ -138,7 +146,7 @@ export class DashboardService {
 
   async getPendingOrders(userId: number): Promise<number> {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/request`, {
+      this.httpService.get(`${this.requestServiceUrl}/request`, {
         params: { requestingUserId: userId },
       })
     );
@@ -153,7 +161,7 @@ export class DashboardService {
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
     const response = await firstValueFrom(
-      this.httpService.get(`${this.apiGatewayUrl}/request`, {
+      this.httpService.get(`${this.requestServiceUrl}/request`, {
         params: { requestingUserId: userId },
       })
     );
@@ -168,7 +176,7 @@ export class DashboardService {
     for (const req of requests) {
       // Need to get purchase price
       const purchaseResponse = await firstValueFrom(
-        this.httpService.get(`${this.apiGatewayUrl}/purchase/${req.purchaseId}`)
+        this.httpService.get(`${this.purchaseServiceUrl}/purchases/${req.purchaseId}`)
       );
       const purchase = purchaseResponse.data;
       total += req.quantityRequested * purchase.pricePerUnit;
