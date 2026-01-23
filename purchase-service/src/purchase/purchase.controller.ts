@@ -77,4 +77,10 @@ export class PurchaseController {
         return ApiResponseUtil.success(null, 'Purchase deleted successfully');
     }
 
+    @Get('inventory/:branchId')
+    async getInventoryForBranch(@Param('branchId', ParseIntPipe) branchId: number) {
+        const data = await this.purchaseService.getInventoryForBranch(branchId);
+        return ApiResponseUtil.success(data, 'Inventory data retrieved successfully');
+    }
+
 }

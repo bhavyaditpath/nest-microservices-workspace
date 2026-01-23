@@ -13,6 +13,7 @@ export class RequestService {
   private readonly userServiceUrl: string;
   private readonly purchaseServiceUrl: string;
   private readonly notificationServiceUrl: string;
+  private readonly alertServiceUrl: string;
 
   constructor(
     @InjectRepository(Request)
@@ -22,6 +23,7 @@ export class RequestService {
     this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3004';
     this.purchaseServiceUrl = process.env.PURCHASE_SERVICE_URL || 'http://localhost:3006';
     this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
+    this.alertServiceUrl = process.env.ALERT_SERVICE_URL || 'http://localhost:3012';
   }
 
   async create(createRequestDto: CreateRequestDto, requestingUser: User) {
@@ -242,17 +244,19 @@ export class RequestService {
     if (newStatus === RequestStatus.ACCEPT && oldStatus !== RequestStatus.ACCEPT) {
       await this.deductStockFIFO(request);
 
-      // TODO: Uncomment when alert service is available
-      // const adminBranchId = request.adminUser?.branchId ?? request.purchase?.branchId;
-      // if (adminBranchId && Number(adminBranchId) > 0) {
-      //   try {
-      //     await this.alertService.generateAlertsForBranch(Number(adminBranchId));
-      //   } catch (err) {
-      //     console.error('Failed to regenerate alerts after FIFO:', err);
-      //   }
-      // } else {
-      //   console.warn('Admin branchId missing; skipping alert regeneration for request id:', request.id);
-      // }
+      // Regenerate alerts after stock changes
+      const adminBranchId = request.adminUser?.branchId ?? request.purchase?.branchId;
+      if (adminBranchId && Number(adminBranchId) > 0) {
+        try {
+          await firstValueFrom(
+            this.httpService.post(`${this.alertServiceUrl}/alerts/generate/${adminBranchId}`)
+          );
+        } catch (err) {
+          console.error('Failed to regenerate alerts after FIFO:', err);
+        }
+      } else {
+        console.warn('Admin branchId missing; skipping alert regeneration for request id:', request.id);
+      }
     }
 
     // Delivery: give stock to branch (keeps previous behavior)

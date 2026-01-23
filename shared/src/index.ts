@@ -18,3 +18,5 @@ export * from './dto/notificationDto.dto';
 export * from './enums/report-type.enum';
 export * from './enums/delivery-method.enum';
 export * from './enums/alert-status.enum';
+export * from './enums/alert-priority.enum';
+export * from './enums/alert-type.enum';

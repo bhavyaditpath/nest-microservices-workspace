@@ -65,11 +65,11 @@ export class DashboardController {
 
   // Branch Dashboard APIs
   @UseGuards(JwtAuthGuard)
-  @Get('branch/:userId/current-stock')
-  async getCurrentStock(@Req() req: Request, @Param('userId', ParseIntPipe) userId: number) {
+  @Get('branch/current-stock')
+  async getCurrentStock(@Req() req: Request) {
     const headers = { Authorization: req.headers.authorization };
     const response = await firstValueFrom(
-      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/branch/${userId}/current-stock`, { headers })
+      this.httpService.get(`${this.dashboardServiceUrl}/dashboard/branch/current-stock`, { headers })
     );
     return response.data;
   }

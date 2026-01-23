@@ -12,6 +12,7 @@ import { NotificationType } from 'shared';
 export class PurchaseService {
   private readonly branchServiceUrl: string;
   private readonly notificationServiceUrl: string;
+  private readonly alertServiceUrl: string;
 
   constructor(
     @InjectRepository(Purchase)
@@ -20,6 +21,7 @@ export class PurchaseService {
   ) {
     this.branchServiceUrl = process.env.BRANCH_SERVICE_URL || 'http://localhost:3003';
     this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3009';
+    this.alertServiceUrl = process.env.ALERT_SERVICE_URL || 'http://localhost:3012';
   }
 
   async findDuplicate(productName: string, userId: number) {
@@ -40,10 +42,15 @@ export class PurchaseService {
 
     const savedPurchase = await this.purchaseRepository.save(purchase);
 
-    // TODO: Uncomment when alert service is available
-    // if (createPurchaseDto.branchId) {
-    //   await this.alertService.generateAlertsForBranch(createPurchaseDto.branchId);
-    // }
+    if (createPurchaseDto.branchId) {
+      try {
+        await firstValueFrom(
+          this.httpService.post(`${this.alertServiceUrl}/alerts/generate/${createPurchaseDto.branchId}`)
+        );
+      } catch (error) {
+        console.error('Failed to generate alerts for branch:', error);
+      }
+    }
     await this.createPurchaseNotifications(savedPurchase, createPurchaseDto);
 
     return savedPurchase;
@@ -119,10 +126,15 @@ export class PurchaseService {
     Object.assign(purchase, updatePurchaseDto);
     const updated = await this.purchaseRepository.save(purchase);
 
-    // TODO: Uncomment when alert service is available
-    // if (purchase.branchId) {
-    //   await this.alertService.generateAlertsForBranch(purchase.branchId);
-    // }
+    if (purchase.branchId) {
+      try {
+        await firstValueFrom(
+          this.httpService.post(`${this.alertServiceUrl}/alerts/generate/${purchase.branchId}`)
+        );
+      } catch (error) {
+        console.error('Failed to generate alerts for branch:', error);
+      }
+    }
 
     return updated;
   }
@@ -188,6 +200,23 @@ export class PurchaseService {
 
       },
     };
+  }
+
+  async getInventoryForBranch(branchId: number) {
+    const query = this.purchaseRepository
+      .createQueryBuilder('purchase')
+      .select([
+        'purchase.productName AS productName',
+        'purchase.brand AS brand',
+        'SUM(purchase.quantity) AS currentStock',
+        'purchase.lowStockThreshold AS minStock',
+        'purchase.branchId AS branchId',
+      ])
+      .where('purchase.isRemoved = :isRemoved', { isRemoved: false })
+      .andWhere('purchase.branchId = :branchId', { branchId })
+      .groupBy('purchase.productName, purchase.brand, purchase.lowStockThreshold, purchase.branchId');
+
+    return await query.getRawMany();
   }
 
   private async createPurchaseNotifications(purchase: Purchase, createPurchaseDto: CreatePurchaseDto): Promise<void> {

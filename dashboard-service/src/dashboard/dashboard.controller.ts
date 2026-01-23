@@ -48,11 +48,10 @@ export class DashboardController {
   }
 
   // Branch Dashboard APIs
-  @Get('branch/:userId/current-stock')
+  @Get('branch/current-stock')
   @Roles(UserRole.BRANCH)
-  @UseGuards(BranchAccessGuard)
-  async getCurrentStock(@Param('userId', ParseIntPipe) userId: number, @CurrentUser() user: User): Promise<{ count: number }> {
-    const count = await this.dashboardService.getCurrentStock(userId);
+  async getCurrentStock(@CurrentUser() user: User): Promise<{ count: number }> {
+    const count = await this.dashboardService.getCurrentStock(user);
     return { count };
   }
 
@@ -78,3 +77,4 @@ export class DashboardController {
     return { count };
   }
 }
+
