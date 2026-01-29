@@ -16,7 +16,7 @@ export class AlertService {
     @InjectRepository(StockAlert)
     private alertRepository: Repository<StockAlert>,
     private httpService: HttpService,
-  ) {}
+  ) { }
 
   async create(createAlertDto: CreateAlertDto): Promise<StockAlert> {
     if (!createAlertDto.priority) {
@@ -78,20 +78,27 @@ export class AlertService {
 
   async generateAlertsForBranch(branchId: number): Promise<void> {
     try {
-      const response = await this.httpService.get(`http://purchase-service/purchase/inventory/${branchId}`).toPromise();
-      if (!response) return;
-      const inventoryData = response.data; // array of { productName, brand, currentStock, minStock }
+      const response = await this.httpService
+        .get(`http://localhost:3006/purchases/inventory/${branchId}`)
+        .toPromise();
+
+      if (!response?.data?.data || !Array.isArray(response.data.data)) {
+        return;
+      }
+
+      const inventoryData = response.data.data;
 
       for (const item of inventoryData) {
-        const currentStock = Number(item.currentStock);
-        const minStock = Number(item.minStock);
-        const productName = item.productName;
+        const currentStock = Number(item.currentstock);
+        const minStock = Number(item.minstock);
+        const productName = item.productname;
         const brand = item.brand;
 
         const alertType =
-          currentStock <= 0 ? AlertType.OUT_OF_STOCK : AlertType.LOW_STOCK;
+          currentStock <= 0
+            ? AlertType.OUT_OF_STOCK
+            : AlertType.LOW_STOCK;
 
-        // Get any existing alert regardless of status
         const existingAlert = await this.findExistingAnyStatusAlert(
           productName,
           brand,
@@ -115,6 +122,7 @@ export class AlertService {
               existingAlert.currentStock = currentStock;
               existingAlert.shortage = shortage;
               existingAlert.priority = this.calculatePriority(shortage, minStock);
+
               await this.alertRepository.save(existingAlert);
             }
           } else {
@@ -131,6 +139,7 @@ export class AlertService {
           if (existingAlert && existingAlert.status === AlertStatus.ACTIVE) {
             existingAlert.status = AlertStatus.RESOLVED;
             existingAlert.resolvedDate = new Date();
+
             await this.alertRepository.save(existingAlert);
           }
         }

@@ -262,8 +262,40 @@ export class RequestService {
     // Delivery: give stock to branch (keeps previous behavior)
     if (newStatus === RequestStatus.DELIVERED && oldStatus !== RequestStatus.DELIVERED) {
       await this.handleDelivery(request);
-    }
+      const branchId = request.requestingUser?.branchId;
 
+      if (branchId) {
+        try {
+          const inventoryRes = await firstValueFrom(
+            this.httpService.get(
+              `${this.purchaseServiceUrl}/purchase/inventory/${branchId}`
+            )
+          );
+
+          const inventory = inventoryRes.data?.data ?? [];
+
+          for (const item of inventory) {
+            const currentStock = Number(item.currentStock);
+            const minStock = Number(item.minStock);
+
+            if (currentStock < minStock) {
+              await firstValueFrom(
+                this.httpService.post(
+                  `${this.alertServiceUrl}/alerts/generate/${branchId}`
+                )
+              );
+
+              break; // One trigger is enough
+            }
+          }
+        } catch (error) {
+          console.error(
+            `[DELIVERED_ALERT_FAILED] Failed to check/generate alerts`,
+            error.message
+          );
+        }
+      }
+    }
     return ApiResponseUtil.success(updated, 'Request updated successfully');
   }
 
@@ -373,19 +405,19 @@ export class RequestService {
         this.httpService.get(`${this.purchaseServiceUrl}/purchases?userId=${request.adminUserId}`)
       );
       const purchases: PurchaseData[] = response.data.data ?? [];
-      const relevantPurchase = purchases.find(p => p.productName.toLowerCase() === request.productName.toLowerCase());
+      const relevantPurchase = purchases.find(p => p.productName.toLowerCase() === request.purchase.productName.toLowerCase());
       if (!relevantPurchase) {
         console.error('No purchase found for delivery');
         return;
       }
 
       const newPurchase = {
-        productName: request.productName,
+        productName: request.purchase.productName,
         quantity: request.quantityRequested,
         pricePerUnit: relevantPurchase.pricePerUnit,
         totalPrice: request.quantityRequested * relevantPurchase.pricePerUnit,
         userId: request.requestingUserId,
-        branchId: null, // or fetch branch
+        branchId: request.requestingUser?.branchId || null,
       };
 
       await firstValueFrom(

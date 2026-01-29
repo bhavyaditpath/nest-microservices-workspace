@@ -45,7 +45,9 @@ export class PurchaseService {
     if (createPurchaseDto.branchId) {
       try {
         await firstValueFrom(
-          this.httpService.post(`${this.alertServiceUrl}/alerts/generate/${createPurchaseDto.branchId}`)
+          this.httpService.post(
+            `${this.alertServiceUrl}/alerts/generate/${createPurchaseDto.branchId}`
+          )
         );
       } catch (error) {
         console.error('Failed to generate alerts for branch:', error);
@@ -62,7 +64,7 @@ export class PurchaseService {
       .where('purchase.isRemoved = :isRemoved', { isRemoved: false });
 
     if (Is3Days !== 'false') {
-        query.andWhere("purchase.createdAt >= NOW() - INTERVAL '3 days'");
+      query.andWhere("purchase.createdAt >= NOW() - INTERVAL '3 days'");
     }
 
     if (userId) {
