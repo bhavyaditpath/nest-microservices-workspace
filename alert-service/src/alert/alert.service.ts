@@ -255,7 +255,7 @@ export class AlertService {
       const message = `${alert.itemName} - Current stock: ${alert.currentStock}, Shortage: ${alert.shortage}`;
 
       // Create branch-wide notification for all users in the branch
-      await this.httpService.post('http://notification-service/notification', {
+      await this.httpService.post('http://localhost:3009/notifications', {
         title,
         message,
         type: NotificationType.BRANCH,
@@ -275,7 +275,7 @@ export class AlertService {
       const actionText = action === 'resolved' ? 'resolved' : 'dismissed';
       const message = `${alert.itemName} alert has been ${actionText}.`;
 
-      await this.httpService.post('http://notification-service/notification', {
+      await this.httpService.post('http://localhost:3009/notifications', {
         title,
         message,
         type: NotificationType.BRANCH,

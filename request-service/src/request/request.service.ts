@@ -275,8 +275,8 @@ export class RequestService {
           const inventory = inventoryRes.data?.data ?? [];
 
           for (const item of inventory) {
-            const currentStock = Number(item.currentStock);
-            const minStock = Number(item.minStock);
+            const currentStock = Number(item.currentstock);
+            const minStock = Number(item.minstock);
 
             if (currentStock < minStock) {
               await firstValueFrom(

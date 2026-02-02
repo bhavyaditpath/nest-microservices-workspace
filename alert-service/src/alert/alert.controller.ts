@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Patch, Param, Delete, Query } from '@nestjs/common';
 import { AlertService } from './alert.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -35,12 +35,12 @@ export class AlertController {
     return this.alertService.update(+id, updateAlertDto);
   }
 
-  @Post(':id/resolve')
+  @Put(':id/resolve')
   resolve(@Param('id') id: string, @Body() resolveAlertDto: ResolveAlertDto) {
     return this.alertService.resolve(+id, resolveAlertDto);
   }
 
-  @Post(':id/dismiss')
+  @Put(':id/dismiss')
   dismiss(@Param('id') id: string, @Body() dismissAlertDto: DismissAlertDto) {
     return this.alertService.dismiss(+id, dismissAlertDto);
   }
